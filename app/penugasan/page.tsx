@@ -6,7 +6,7 @@ import { ArrowRight, Check, Download, Loader2, Plus, Trash2 } from 'lucide-react
 import { Button, Card, PageHeader, StatusBadge, inputClass } from '@/components/ui';
 import { useStore } from '@/lib/store';
 import { download, exportPlan, fromRun, importProject, importRoster, rank } from '@/lib/staffing';
-import type { Assignment, Candidate, Ranking, Requirement, Talent, TalentProject } from '@/lib/staffing';
+import type { Assignment, Candidate, FteImport, Ranking, Requirement, Talent, TalentProject } from '@/lib/staffing';
 
 const roleNames: Record<string, string> = { DE: 'Data Engineer', DA: 'Data Analyst', DS: 'Data Scientist', AI: 'Engineer' };
 const steps = ['Data & FTE', 'Kebutuhan Skill', 'Rekomendasi & Penugasan'];
@@ -20,6 +20,8 @@ export default function StaffingPage() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [ranking, setRanking] = useState<Ranking | null>(null);
   const [warnings, setWarnings] = useState<string[]>([]);
+  const [fteImport, setFteImport] = useState<FteImport | null>(null);
+  const [rosterSource, setRosterSource] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [step, setStep] = useState(0);
@@ -69,7 +71,7 @@ export default function StaffingPage() {
 
   return <>
     <PageHeader title="Pemetaan & Penugasan Talent" description="Lanjutkan estimasi proyek menjadi rekomendasi berbasis skill. Anda menentukan talent dan alokasi akhirnya."
-      actions={<Button variant="secondary" disabled={!body || busy} onClick={() => body && download(new Blob([JSON.stringify({ version: 1, ...body, warnings }, null, 2)], { type: 'application/json' }), 'Talent_Planning_Session.json')}><Download size={16} /> Simpan sesi</Button>} />
+      actions={<Button variant="secondary" disabled={!body || busy} onClick={() => body && download(new Blob([JSON.stringify({ version: 1, ...body, warnings, fteImport, rosterSource }, null, 2)], { type: 'application/json' }), 'Talent_Planning_Session.json')}><Download size={16} /> Simpan sesi</Button>} />
     <div className="mb-6 flex flex-wrap gap-2" role="tablist" aria-label="Langkah pemetaan">{steps.map((s, i) => <button key={s} role="tab" aria-selected={step === i} disabled={i > 0 && (!project || !talents.length)} onClick={() => { setStep(i); setQuery(''); }} className={`rounded-lg px-4 py-2 text-sm ${step === i ? 'bg-accent-600 text-white' : 'border border-line bg-white text-muted'} disabled:opacity-40`}>{i + 1}. {s}</button>)}</div>
     {error && <p role="alert" className="mb-4 rounded-lg bg-red-50 p-4 text-sm text-red-800">{error}</p>}
     {busy && <p role="status" className="mb-4 flex items-center gap-2 text-sm"><Loader2 className="animate-spin" size={16} /> Membaca dan memvalidasi data…</p>}
@@ -86,10 +88,12 @@ export default function StaffingPage() {
           </div>
         </Card>
         <Card title="2. Data talent" description="Unggah Talent Capability Breakdown.xlsx. Semua talent dipertimbangkan untuk semua role.">
-          <label className="block text-sm font-medium">Workbook profil talent<input aria-label="Workbook talent capability" className={`${inputClass} mt-2`} type="file" accept=".xlsx" disabled={busy} onChange={fileHandler(async f => { const r = await importRoster(f, catalog); setTalents(r.talents); setWarnings(r.warnings); setAssignments([]); setRanking(null); })} /></label>
-          <p className="mt-3 text-xs text-muted">Kolom FTE atau Current FTE dibaca sebagai beban kerja saat ini. Skala skill: 1 tidak ada pengalaman, 2 dasar, 3 menengah, 4 mahir, 5 ahli. Current FTE kosong berarti belum diketahui; bukan 0.</p>
+          <label className="block text-sm font-medium">Workbook profil talent<input aria-label="Workbook talent capability" className={`${inputClass} mt-2`} type="file" accept=".xlsx" disabled={busy} onChange={fileHandler(async f => { const r = await importRoster(f, catalog); setTalents(r.talents); setWarnings(r.warnings); setFteImport(r.fte_import); setRosterSource(f.name); setAssignments([]); setRanking(null); })} /></label>
+          <p className="mt-3 text-xs text-muted">Kolom FTE atau Current FTE dibaca sebagai beban kerja saat ini. Angka 0,5 dan 0.5 didukung. Rumus Excel harus memiliki hasil yang tersimpan. Skala skill: 1 tidak ada pengalaman, 2 dasar, 3 menengah, 4 mahir, 5 ahli. Current FTE kosong berarti belum diketahui; bukan 0.</p>
           {talents.length > 0 && <p className="mt-4 flex items-center gap-2 text-sm text-emerald-800"><Check size={16} /> {talents.length} talent berhasil dimuat</p>}
-          <label className="mt-5 block text-xs text-muted">Pulihkan sesi tersimpan<input className={`${inputClass} mt-2`} aria-label="Pulihkan sesi" type="file" accept=".json" disabled={busy} onChange={fileHandler(async f => { const data = JSON.parse(await f.text()); if (data.version !== 1 || !Array.isArray(data.talents) || !data.project) throw new Error('Format sesi tidak sesuai.'); await rank(data); setProject(data.project); setTalents(data.talents); setAssignments(data.assignments ?? []); setWarnings(data.warnings ?? []); setRanking(null); })} /></label>
+          {rosterSource && <p className="mt-2 text-xs text-muted">File aktif: {rosterSource}</p>}
+          {fteImport && <p role="status" className={`mt-2 text-sm ${fteImport.missing ? 'text-amber-900' : 'text-emerald-800'}`}>Kolom FTE: {fteImport.columns.join(', ') || 'tidak ditemukan'} · {fteImport.loaded}/{talents.length} nilai FTE terbaca{fteImport.formulas_without_cached_value ? ` · ${fteImport.formulas_without_cached_value} rumus belum dihitung` : ''}</p>}
+          <label className="mt-5 block text-xs text-muted">Pulihkan sesi tersimpan<input className={`${inputClass} mt-2`} aria-label="Pulihkan sesi" type="file" accept=".json" disabled={busy} onChange={fileHandler(async f => { const data = JSON.parse(await f.text()); if (data.version !== 1 || !Array.isArray(data.talents) || !data.project) throw new Error('Format sesi tidak sesuai.'); await rank(data); setProject(data.project); setTalents(data.talents); setAssignments(data.assignments ?? []); setWarnings(data.warnings ?? []); setFteImport(data.fteImport ?? null); setRosterSource(data.rosterSource ?? 'Sesi tersimpan'); setRanking(null); })} /></label>
         </Card>
       </div>
       {[...warnings, ...(project?.warnings ?? [])].length > 0 && <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950"><ul className="list-disc space-y-1 pl-5">{[...warnings, ...(project?.warnings ?? [])].map((w, i) => <li key={i}>{w}</li>)}</ul></div>}

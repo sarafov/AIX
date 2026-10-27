@@ -219,6 +219,76 @@ def test_validation_import_stops_at_next_summary_section():
     assert p.requirements[0].weight == 30
 
 
+@pytest.mark.parametrize(
+    "fte_value,expected",
+    [(0.5, 0.5), ("0,5", 0.5), (" 0,50 ", 0.5), ("0.5", 0.5), ("0,00", 0), ("50%", 0.5)],
+)
+def test_locale_fte_values_and_excel_number_format(fte_value, expected):
+    w = Workbook()
+    s = w.active
+    s.title = "Talent Capability Breakdown"
+    s.append(["Nama", "Role Utama", "Preferred Role", "Tribe / Project", "FTE", "Data Analyst"])
+    s.append([None, None, None, None, None, "Advanced SQL Execution"])
+    s.append(["Engineer A", "Data Engineer", "Data Engineer", "Synthetic", fte_value, 5])
+    s["E3"].number_format = "#,##0.00"
+    parsed = read_talents(xlsx(w), load_default_catalog())
+    assert parsed["talents"][0]["current_fte"] == expected
+    assert parsed["fte_import"] == {
+        "columns": ["E"],
+        "loaded": 1,
+        "missing": 0,
+        "formulas_without_cached_value": 0,
+    }
+
+
+def test_uncached_fte_formula_has_an_actionable_warning():
+    w = Workbook()
+    s = w.active
+    s.title = "Talent Capability Breakdown"
+    s.append(["Nama", "Role Utama", "Preferred Role", "Tribe / Project", "FTE", "Data Analyst"])
+    s.append([None, None, None, None, None, "Advanced SQL Execution"])
+    s.append(["Engineer A", "Data Engineer", "Data Engineer", "Synthetic", "=0.2+0.3", 5])
+    parsed = read_talents(xlsx(w), load_default_catalog())
+    assert parsed["talents"][0]["current_fte"] is None
+    assert parsed["fte_import"]["formulas_without_cached_value"] == 1
+    assert any("E3" in w and "Recalculate and save" in w for w in parsed["warnings"])
+
+
+def test_missing_fte_header_is_reported_in_import_summary():
+    w = Workbook()
+    s = w.active
+    s.title = "Talent Capability Breakdown"
+    s.append(["Nama", "Data Analyst"])
+    s.append([None, "Advanced SQL Execution"])
+    s.append(["Engineer A", 5])
+    parsed = read_talents(xlsx(w), load_default_catalog())
+    assert parsed["fte_import"]["columns"] == []
+    assert any("No FTE or Current FTE column" in w for w in parsed["warnings"])
+
+
+@pytest.mark.parametrize("top,label", [("Current", "FTE"), ("Data Engineer", "FTE")])
+def test_fte_header_recognized_below_grouped_or_split_header(top, label):
+    w = Workbook()
+    s = w.active
+    s.title = "Talent Capability Breakdown"
+    s.append(["Nama", None, None, None, top, "Data Analyst"])
+    s.append([None, None, None, None, label, "Advanced SQL Execution"])
+    s.append(["Engineer A", None, None, None, "0,5", 5])
+    parsed = read_talents(xlsx(w), load_default_catalog())
+    assert parsed["talents"][0]["current_fte"] == 0.5
+
+
+def test_invalid_decimal_fte_is_not_silently_treated_as_unknown():
+    w = Workbook()
+    s = w.active
+    s.title = "Talent Capability Breakdown"
+    s.append(["Nama", "FTE", "Data Analyst"])
+    s.append([None, None, "Advanced SQL Execution"])
+    s.append(["Engineer A", "0,x", 5])
+    with pytest.raises(ValueError, match="B3: invalid FTE"):
+        read_talents(xlsx(w), load_default_catalog())
+
+
 def test_catalog_overlay_and_round_trip_definitions():
     c = load_default_catalog()
     assert (

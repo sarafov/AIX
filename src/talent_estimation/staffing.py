@@ -122,7 +122,7 @@ class StaffingRequest(BaseModel):
 
 
 def read_talents(content: bytes, catalog: Catalog) -> dict[str, Any]:
-    """Read the two-header breakdown workbook, with optional Current FTE column."""
+    """Read the two-header breakdown workbook, with optional FTE/Current FTE column."""
     workbook = load_workbook(io.BytesIO(content), read_only=True, data_only=True)
     name = "Talent Capability Breakdown"
     if name not in workbook.sheetnames:
@@ -149,6 +149,7 @@ def read_talents(content: bytes, catalog: Catalog) -> dict[str, Any]:
             "preferred role",
             "tribe project",
             "current fte",
+            "fte",
             "fte saat ini",
             "capacity fte",
         }:
@@ -206,7 +207,7 @@ def read_talents(content: bytes, catalog: Catalog) -> dict[str, Any]:
             if not math.isfinite(numeric) or numeric != int(numeric) or not 1 <= numeric <= 5:
                 raise ValueError(f"Row {row_number}, column {i + 1}: proficiency must be 1–5.")
             scores[key] = int(numeric)
-        current = value(row, "current fte", "fte saat ini")
+        current = value(row, "current fte", "fte saat ini", "fte")
         capacity = value(row, "capacity fte")
         talents.append(
             Talent(

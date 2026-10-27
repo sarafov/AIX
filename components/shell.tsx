@@ -69,7 +69,7 @@ function Sidebar() {
       <div className="sticky top-0 flex h-screen flex-col">
         <Link href="/" className="flex items-center gap-2.5 border-b border-line px-5 py-4">
           <span aria-hidden className="h-5 w-1 rounded-full bg-accent-600" />
-          <span className="text-[15px] font-semibold text-ink">Talent Estimation</span>
+          <span className="text-[15px] font-semibold text-ink">AIX Talent Planning</span>
         </Link>
         <nav aria-label="Navigasi utama" className="flex-1 space-y-1 overflow-y-auto p-3">
           <NavLink href="/" label="Beranda" icon={<Home className="h-4 w-4" aria-hidden />} />
@@ -97,6 +97,7 @@ function Sidebar() {
           </div>
           <div className="space-y-1 border-t border-line pt-3">
             <NavLink href="/katalog" label="Katalog Capability" icon={<Layers className="h-4 w-4" aria-hidden />} />
+            <NavLink href="/penugasan" label="Pemetaan & Penugasan" icon={<CircleCheck className="h-4 w-4" aria-hidden />} />
             <NavLink href="/pengaturan" label="Pengaturan" icon={<Settings className="h-4 w-4" aria-hidden />} />
             <NavLink href="/metodologi" label="Metodologi" icon={<BookOpen className="h-4 w-4" aria-hidden />} />
             <NavLink href="/tentang" label="Tentang Aplikasi" icon={<Info className="h-4 w-4" aria-hidden />} />
@@ -191,7 +192,7 @@ function Footer() {
           Dibuat oleh <span className="font-medium text-ink">Adryan Rizky Alviano</span>
         </span>
         <span className="flex gap-4">
-          <a href="https://github.com/adryanra97/talent-estimation-agent" className="hover:text-ink">
+          <a href="https://github.com/sarafov/AIX" className="hover:text-ink">
             GitHub
           </a>
           <span>Lisensi MIT</span>

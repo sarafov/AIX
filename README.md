@@ -1,4 +1,23 @@
-# Talent Estimation Agent
+# AIX Talent Planning
+
+AIX extends [Talent Estimation Agent](https://github.com/adryanra97/talent-estimation-agent)
+with project capability mapping, cross-role talent recommendations, capacity
+planning, and human-selected assignments. The upstream MIT license and author
+attribution are retained.
+
+Open **Pemetaan & Penugasan** to continue from an estimation run or import an
+existing validation workbook. Upload your talent skill inventory, enter current
+FTE, review skill targets, and choose the people and allocations yourself.
+All talents are scored for each project role regardless of their primary or
+preferred role. The transparent score combines skill proficiency (70%), target
+coverage (20%), and capacity (10%).
+
+See [the workflow and scoring guide](docs/talent-assignment.md). The public app
+does not ship with personal talent data. Upload your workbook for each session
+or restore a session file you saved locally. The default catalog includes 127
+data-role skills with English definitions.
+
+The original estimation features are documented below.
 
 [![CI](https://github.com/adryanra97/talent-estimation-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/adryanra97/talent-estimation-agent/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.12-3776ab)

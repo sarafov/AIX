@@ -15,6 +15,11 @@ to upload an existing validation workbook.
    with its label in either header row and values from row 3. Both labels mean
    current workload; they do not mean total capacity. `Capacity FTE` is also supported. Without
    current workload, availability remains unknown. Capacity defaults to 1 FTE.
+   Numeric Excel cells work regardless of comma/dot display settings. Text
+   values such as `0,5`, `0.5`, and `50%` are accepted. An FTE formula must have
+   a calculated result saved in the workbook; the app reports uncached formulas
+   and their cell addresses instead of guessing a workload. The upload summary
+   identifies the FTE column and the number of successfully loaded values.
 4. Review project demand, WBS classification, skill weights, and target levels.
    You can add catalog skills or remove requirements. The default target is 3.
 5. Compare all candidates and open their skill details. Select any talent,

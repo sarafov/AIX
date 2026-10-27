@@ -163,6 +163,42 @@ def test_roster_fte_and_scores_import_and_strict_score_validation():
         read_talents(xlsx(w), load_default_catalog())
 
 
+@pytest.mark.parametrize("second_header", [False, True])
+def test_fte_in_column_e_is_workload_not_a_skill(second_header):
+    w = Workbook()
+    s = w.active
+    s.title = "Talent Capability Breakdown"
+    s.append(
+        [
+            "Nama",
+            "Role Utama",
+            "Preferred Role",
+            "Tribe / Project",
+            None if second_header else "FTE",
+            "Data Analyst",
+        ]
+    )
+    s.append([None, None, None, None, "FTE" if second_header else None, "Advanced SQL Execution"])
+    s.append(["Engineer A", "Data Engineer", "Data Engineer", "Synthetic", 0.4, 5])
+    s.append(["Engineer B", "Data Engineer", "Data Engineer", "Synthetic", 0, 3])
+    s.append(["Engineer C", "Data Engineer", "Data Engineer", "Synthetic", None, 2])
+    client = TestClient(app)
+    response = client.post("/api/py/talent/parse", files={"file": ("talents.xlsx", xlsx(w))})
+    assert response.status_code == 200, response.text
+    parsed = response.json()
+    assert [t["current_fte"] for t in parsed["talents"]] == [0.4, 0, None]
+    assert parsed["matched_skills"] == 1
+    assert [next(iter(t["skills"].values())) for t in parsed["talents"]] == [5, 3, 2]
+    assert len(parsed["warnings"]) == 1
+    assert parsed["warnings"][0].startswith("1 talents have no Current FTE")
+    b = body()
+    b.talents = [Talent.model_validate(t) for t in parsed["talents"]]
+    candidates = recommend(b)["roles"][0]["candidates"]
+    engineer = next(c for c in candidates if c["name"] == "Engineer A")
+    assert engineer["available_fte"] == pytest.approx(0.6)
+    assert not engineer["provisional"]
+
+
 def test_validation_import_stops_at_next_summary_section():
     w = Workbook()
     s = w.active

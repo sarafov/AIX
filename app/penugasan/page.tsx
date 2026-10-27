@@ -87,7 +87,7 @@ export default function StaffingPage() {
         </Card>
         <Card title="2. Data talent" description="Unggah Talent Capability Breakdown.xlsx. Semua talent dipertimbangkan untuk semua role.">
           <label className="block text-sm font-medium">Workbook profil talent<input aria-label="Workbook talent capability" className={`${inputClass} mt-2`} type="file" accept=".xlsx" disabled={busy} onChange={fileHandler(async f => { const r = await importRoster(f, catalog); setTalents(r.talents); setWarnings(r.warnings); setAssignments([]); setRanking(null); })} /></label>
-          <p className="mt-3 text-xs text-muted">Skala: 1 tidak ada pengalaman, 2 dasar, 3 menengah, 4 mahir, 5 ahli. Current FTE kosong berarti belum diketahui; bukan 0.</p>
+          <p className="mt-3 text-xs text-muted">Kolom FTE atau Current FTE dibaca sebagai beban kerja saat ini. Skala skill: 1 tidak ada pengalaman, 2 dasar, 3 menengah, 4 mahir, 5 ahli. Current FTE kosong berarti belum diketahui; bukan 0.</p>
           {talents.length > 0 && <p className="mt-4 flex items-center gap-2 text-sm text-emerald-800"><Check size={16} /> {talents.length} talent berhasil dimuat</p>}
           <label className="mt-5 block text-xs text-muted">Pulihkan sesi tersimpan<input className={`${inputClass} mt-2`} aria-label="Pulihkan sesi" type="file" accept=".json" disabled={busy} onChange={fileHandler(async f => { const data = JSON.parse(await f.text()); if (data.version !== 1 || !Array.isArray(data.talents) || !data.project) throw new Error('Format sesi tidak sesuai.'); await rank(data); setProject(data.project); setTalents(data.talents); setAssignments(data.assignments ?? []); setWarnings(data.warnings ?? []); setRanking(null); })} /></label>
         </Card>

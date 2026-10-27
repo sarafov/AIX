@@ -11,8 +11,9 @@ to upload an existing validation workbook.
    role; the second header identifies each skill. Every respondent is eligible
    for every project role. Primary and preferred roles are informational only.
 3. Review each talent's current workload and capacity. You can add a
-   `Current FTE` column to the talent workbook, with its label in the first
-   header row and values from row 3. `Capacity FTE` is also supported. Without
+   `FTE` or `Current FTE` column to the talent workbook (including column E),
+   with its label in either header row and values from row 3. Both labels mean
+   current workload; they do not mean total capacity. `Capacity FTE` is also supported. Without
    current workload, availability remains unknown. Capacity defaults to 1 FTE.
 4. Review project demand, WBS classification, skill weights, and target levels.
    You can add catalog skills or remove requirements. The default target is 3.

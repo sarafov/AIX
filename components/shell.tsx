@@ -189,7 +189,7 @@ function Footer() {
     <footer className="mt-12 border-t border-line px-6 py-5 text-xs text-muted">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2">
         <span>
-          Dibuat oleh <span className="font-medium text-ink">Adryan Rizky Alviano</span>
+          Dibuat oleh <span className="font-bold text-ink">Abdurrahman &amp; Adryan Rizky Alviano</span>
         </span>
         <span className="flex gap-4">
           <a href="https://github.com/sarafov/AIX" className="hover:text-ink">

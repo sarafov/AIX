@@ -175,6 +175,7 @@ export interface RoleProfile {
   usually_supporting_on: string;
   substitutes: string;
   pillars: Record<string, string[]>;
+  skill_definitions?: Record<string, string>;
 }
 
 export interface AiCategory {

@@ -1,0 +1,764 @@
+[
+  [
+    "DE",
+    "SQL & Data Modeling",
+    "Advanced SQL Query Writing",
+    "Writing efficient queries, including complex joins, window functions, and query performance optimization at scale."
+  ],
+  [
+    "DE",
+    "SQL & Data Modeling",
+    "Dimensional & Relational Data Modeling",
+    "Designing dimensional, relational, or lakehouse data schemas and understanding normalization and denormalization concepts for each use case."
+  ],
+  [
+    "DE",
+    "SQL & Data Modeling",
+    "Lakehouse Schema Design",
+    "Understanding partitioning, clustering, and file formats such as Parquet, Delta, and Iceberg, including the trade-offs between approaches."
+  ],
+  [
+    "DE",
+    "Python for Data Eng",
+    "Pipeline Scripting dengan Python",
+    "Using Python for scripting, pipeline development, and data transformations beyond the capabilities of SQL alone."
+  ],
+  [
+    "DE",
+    "Python for Data Eng",
+    "Data Ecosystem Libraries",
+    "Using data ecosystem libraries to automate tasks and transform data at scale."
+  ],
+  [
+    "DE",
+    "ETL/ELT & Orchestration",
+    "Ingestion & CDC",
+    "Ingesting data from databases, APIs, and streaming sources, including change data capture for real-time data."
+  ],
+  [
+    "DE",
+    "ETL/ELT & Orchestration",
+    "Desain Pipeline Idempoten & Fault-Tolerant",
+    "Understanding data integration patterns such as extract, transform, and load, and designing idempotent, fault-tolerant pipelines."
+  ],
+  [
+    "DE",
+    "ETL/ELT & Orchestration",
+    "Orchestration & Scheduling",
+    "Using orchestration tools to schedule and monitor data pipelines and manage dependencies between tasks."
+  ],
+  [
+    "DE",
+    "Platform Fundamentals",
+    "Object Storage & Data Lake Design",
+    "Understanding the architecture and operation of raw and intermediate data storage within a lakehouse architecture."
+  ],
+  [
+    "DE",
+    "Platform Fundamentals",
+    "Data Warehouse / OLAP Architecture",
+    "Understanding the architecture and operation of data warehouses for storing modeled data ready for consumption."
+  ],
+  [
+    "DE",
+    "Platform Fundamentals",
+    "Trade-off Format & Partisi",
+    "Understanding partitioning, clustering, file formats such as Parquet, Delta, and Iceberg, and the trade-offs between storage approaches."
+  ],
+  [
+    "DE",
+    "Data Quality & Testing",
+    "Data Validation",
+    "Defining and implementing data validation, including schema validation, freshness checks, null checks, and referential integrity checks."
+  ],
+  [
+    "DE",
+    "Data Quality & Testing",
+    "Pipeline Unit Testing",
+    "Writing pipeline unit tests to ensure data transformations behave as expected."
+  ],
+  [
+    "DE",
+    "Data Quality & Testing",
+    "Data Contract Definition",
+    "Understanding and defining data contracts between data producers and consumers."
+  ],
+  [
+    "DE",
+    "Monitoring & Observability",
+    "Pipeline Health Monitoring",
+    "Building visibility into pipeline health through logs, metrics, and alerts."
+  ],
+  [
+    "DE",
+    "Monitoring & Observability",
+    "Anomaly Detection pada Data",
+    "Proactively detecting data anomalies before they affect downstream data consumers."
+  ],
+  [
+    "DE",
+    "Monitoring & Observability",
+    "Incident Response & RCA",
+    "Responding to data incidents through a structured process with documented root cause analysis (RCA)."
+  ],
+  [
+    "DE",
+    "Monitoring & Observability",
+    "Data Lineage Tracking",
+    "Tracking data origins, transformations, and the impact of changes end to end to support debugging, audits, and impact analysis."
+  ],
+  [
+    "DE",
+    "CI/CD for Data Pipelines",
+    "Version Control Workflow untuk Pipeline",
+    "Managing pipeline code collaboratively using version control."
+  ],
+  [
+    "DE",
+    "CI/CD for Data Pipelines",
+    "Automated Testing dalam CI/CD",
+    "Automating pipeline testing as part of continuous integration."
+  ],
+  [
+    "DE",
+    "CI/CD for Data Pipelines",
+    "Deployment Multi-Environment",
+    "Managing consistent data pipeline deployments across development, staging, and production environments."
+  ],
+  [
+    "DE",
+    "IaC & Containerization",
+    "Infrastructure Provisioning (Terraform)",
+    "Managing data infrastructure declaratively across multiple clouds using reusable configurations to reduce the risks of manual configuration."
+  ],
+  [
+    "DE",
+    "IaC & Containerization",
+    "Containerization & Orchestration",
+    "Ensuring consistent development, staging, and production environments and simplifying data workload deployment."
+  ],
+  [
+    "DE",
+    "Security, Gov & Compliance",
+    "Data Security",
+    "Understanding data security principles, including encryption, access control, and masking."
+  ],
+  [
+    "DE",
+    "Security, Gov & Compliance",
+    "Data Governance & Catalog",
+    "Understanding data governance concepts such as ownership, lineage, and catalogs, and managing metadata to support data discovery."
+  ],
+  [
+    "DE",
+    "Security, Gov & Compliance",
+    "Regulatory Compliance",
+    "Complying with applicable regulations governing data management."
+  ],
+  [
+    "DA",
+    "Architecture & Modelling",
+    "Dimensional Data Modelling",
+    "Designing star/snowflake schemas, Kimball methodology, fact/dimension tables, and SCDs (Slowly Changing Dimensions)"
+  ],
+  [
+    "DA",
+    "Architecture & Modelling",
+    "Semantic & Metric Layer Design",
+    "Building unified logic layers (dbt Semantic Layer, LookML, Cube, Power BI Dataset Models) to prevent metric fragmentation"
+  ],
+  [
+    "DA",
+    "Architecture & Modelling",
+    "Cloud Data Warehouse Optimization",
+    "Performance tuning on Snowflake, BigQuery, Redshift, or Databricks (partitioning, clustering, indexing strategies)"
+  ],
+  [
+    "DA",
+    "Architecture & Modelling",
+    "Analytics Engineering (dbt)",
+    "Transforming raw operational data into tested, documented, version-controlled models ready for BI consumption"
+  ],
+  [
+    "DA",
+    "Architecture & Modelling",
+    "Database Design",
+    "Understanding relational DB mechanics, foreign keys, normalisation vs denormalisation tradeoffs"
+  ],
+  [
+    "DA",
+    "Querying & Transformation",
+    "Advanced SQL Execution",
+    "Complex joins, window functions, recursive CTEs, query optimisation, and aggregations"
+  ],
+  [
+    "DA",
+    "Querying & Transformation",
+    "Data Pipelines & Orchestration",
+    "Interfacing with or building basic DAGs/pipelines using Airflow, Dagster, Fivetran, or SQL agents"
+  ],
+  [
+    "DA",
+    "Querying & Transformation",
+    "Data Cleaning & Wrangling",
+    "Parsing messy strings, handling nulls/outliers, structural reshaping, date/time normalisation"
+  ],
+  [
+    "DA",
+    "Querying & Transformation",
+    "Multi-Source Extraction",
+    "Pulling data across APIs, relational DBs, NoSQL, and flat files into unified staging tables"
+  ],
+  [
+    "DA",
+    "Querying & Transformation",
+    "Validation & Reconciliation",
+    "Auditing source vs. target data, cross-checking totals, validating business logic accuracy"
+  ],
+  [
+    "DA",
+    "Dashboarding & Visuals",
+    "BI Tool Mastery",
+    "Deep technical expertise in platforms like Power BI, Tableau, Looker, Metabase, or Apache Superset"
+  ],
+  [
+    "DA",
+    "Dashboarding & Visuals",
+    "Dashboard UX & Information Design",
+    "Visual hierarchy, layout optimisation, interaction design (drill-downs, parameters, dynamic filters)"
+  ],
+  [
+    "DA",
+    "Dashboarding & Visuals",
+    "Advanced Calculations (DAX / LODs)",
+    "Writing complex DAX measures, Tableau Level-of-Detail expressions, and custom window calculations"
+  ],
+  [
+    "DA",
+    "Dashboarding & Visuals",
+    "Automated & Self-Service BI",
+    "Setting up automated refreshes, alert triggers, subscription reports, and self-service ad-hoc reporting tools"
+  ],
+  [
+    "DA",
+    "Dashboarding & Visuals",
+    "Visual Storytelling",
+    "Selecting optimal chart types, intentional colour palettes, and structuring reports to drive executive action"
+  ],
+  [
+    "DA",
+    "Exploratory Analytics",
+    "Exploratory Data Analysis (EDA)",
+    "Deep-dive statistical profiling, distribution evaluation, outlier detection, and pattern discovery"
+  ],
+  [
+    "DA",
+    "Exploratory Analytics",
+    "Applied Statistics & A/B Testing",
+    "Hypothesis testing, sample size calculation, confidence intervals, regression analysis, and experiment evaluation"
+  ],
+  [
+    "DA",
+    "Exploratory Analytics",
+    "Analytics Scripting (Python / R)",
+    "Using pandas, NumPy, or tidyverse for complex data manipulation, automation, and statistical modelling"
+  ],
+  [
+    "DA",
+    "Exploratory Analytics",
+    "Cohort & User Behaviour",
+    "Retention analysis, funnel drop-off calculation, customer LTV modelling, and RFM segmentation"
+  ],
+  [
+    "DA",
+    "Exploratory Analytics",
+    "Predictive",
+    "Forecasting trends (Prophet, time-series analysis), root-cause analysis, and propensity modelling"
+  ],
+  [
+    "DA",
+    "Business Translation",
+    "KPI Framework Definition",
+    "Defining North Star metrics, input/output KPIs, tree structures, and goal-tracking frameworks"
+  ],
+  [
+    "DA",
+    "Business Translation",
+    "Business Problem Scoping",
+    "Translating vague, high-level business questions into concrete technical and analytical requirements"
+  ],
+  [
+    "DA",
+    "Business Translation",
+    "Financial & Unit Economics Modeling",
+    "Calculating ROI, gross margin impact, customer acquisition cost (CAC), and payback periods"
+  ],
+  [
+    "DA",
+    "Business Translation",
+    "Stakeholder & Executive Communication",
+    "Presenting technical findings to non-technical leaders, aligning cross-functional teams, and driving decisions"
+  ],
+  [
+    "DA",
+    "Governance & Operations",
+    "Data Lineage & Cataloguing",
+    "Tracking data flow from source systems to downstream reports, and maintaining metadata/data dictionaries in a central catalog"
+  ],
+  [
+    "DA",
+    "Governance & Operations",
+    "Data Access & Security (RLS/CLS)",
+    "Implementing Row-Level Security (RLS) and Column-Level Security (CLS) to enforce role-based access controls and protect sensitive/PII data"
+  ],
+  [
+    "DA",
+    "Governance & Operations",
+    "Pipeline & Data Quality Monitoring",
+    "Setting up automated data observability, schema drift alerts, anomaly detection, and pipeline failure notifications"
+  ],
+  [
+    "DS",
+    "Math & Advanced Stats",
+    "Linear Algebra & Calculus",
+    "Understanding matrices, vectors, eigenvalues, partial derivatives, and gradient-based optimization, including gradient descent, that underpin machine learning algorithms."
+  ],
+  [
+    "DS",
+    "Math & Advanced Stats",
+    "Probability & Distributions",
+    "Understanding probability distributions such as Normal, Binomial, and Poisson, conditional probability, Bayes' theorem, and mathematical expectation."
+  ],
+  [
+    "DS",
+    "Math & Advanced Stats",
+    "Hypothesis Testing & CLT",
+    "Designing statistical tests such as t-tests, ANOVA, and Chi-Square tests, determining p-values and confidence intervals, and applying the Central Limit Theorem to large data samples."
+  ],
+  [
+    "DS",
+    "Math & Advanced Stats",
+    "Econometrics",
+    "Applying advanced statistical regression models, addressing multicollinearity, autocorrelation, and heteroscedasticity, and analyzing panel and time-series data."
+  ],
+  [
+    "DS",
+    "Math & Advanced Stats",
+    "Ratio Metrics & Delta Method",
+    "Calculating variances and confidence intervals for complex ratio metrics, such as click-through rate, using Delta Method approximations."
+  ],
+  [
+    "DS",
+    "Experimentation & Causal",
+    "A/B Testing Foundations",
+    "Understanding randomized controlled trials (RCTs), sample size determination through power analysis, statistical significance, and multiple testing problems."
+  ],
+  [
+    "DS",
+    "Experimentation & Causal",
+    "Experiment Design & Stratification",
+    "Designing efficient experiments using random allocation and sample stratification to balance control and treatment groups."
+  ],
+  [
+    "DS",
+    "Experimentation & Causal",
+    "Advanced Test Sensitivity (CUPED)",
+    "Applying advanced variance reduction techniques using pre-experiment data to improve test sensitivity and shorten experiment duration."
+  ],
+  [
+    "DS",
+    "Experimentation & Causal",
+    "Multi-Arm Bandits",
+    "Applying dynamic exploration-exploitation algorithms, such as Thompson Sampling or Upper Confidence Bound, to optimize traffic allocation in real time."
+  ],
+  [
+    "DS",
+    "Experimentation & Causal",
+    "Quasi-Experiments",
+    "Estimating causal effects when randomized experiments are not feasible using methods such as Difference-in-Differences (DiD), Regression Discontinuity Design (RDD), or Propensity Score Matching (PSM)."
+  ],
+  [
+    "DS",
+    "Wrangling & Plumbing",
+    "Advanced SQL & Optimization",
+    "Writing complex queries with window functions and CTEs, optimizing query performance and indexing, and manipulating large-scale relational databases."
+  ],
+  [
+    "DS",
+    "Wrangling & Plumbing",
+    "Data Manipulation (Pandas)",
+    "Cleaning, merging, aggregating, handling missing values, and transforming tabular data using high-performance libraries."
+  ],
+  [
+    "DS",
+    "Wrangling & Plumbing",
+    "Big Data (Spark)",
+    "Processing large-scale distributed data using Spark architecture for batch and streaming transformations."
+  ],
+  [
+    "DS",
+    "Wrangling & Plumbing",
+    "Pipeline Development (ETL/ELT)",
+    "Designing, automating, and scheduling data processing pipelines from raw sources to the data warehouse."
+  ],
+  [
+    "DS",
+    "Wrangling & Plumbing",
+    "Schema Design",
+    "Designing table structures, defining schemas such as star and snowflake schemas, and documenting data dictionaries."
+  ],
+  [
+    "DS",
+    "Classic ML & Modeling",
+    "Supervised Learning",
+    "Building regression and classification models using tree-based algorithms such as Decision Trees, Random Forest, and Gradient Boosting, including XGBoost, LightGBM, and CatBoost."
+  ],
+  [
+    "DS",
+    "Classic ML & Modeling",
+    "Feature Engineering & Selection",
+    "Creating features through encoding, scaling, and binning, and selecting the most relevant features to improve model accuracy and efficiency."
+  ],
+  [
+    "DS",
+    "Classic ML & Modeling",
+    "Unsupervised Learning & Clustering",
+    "Segmenting unlabeled data using clustering algorithms such as K-Means, DBSCAN, and Agglomerative Clustering to analyze customer profiles."
+  ],
+  [
+    "DS",
+    "Classic ML & Modeling",
+    "Dimensionality Reduction",
+    "Reducing the dimensionality of high-dimensional data for visualization or computational efficiency while preserving important information."
+  ],
+  [
+    "DS",
+    "Classic ML & Modeling",
+    "Model Evaluation",
+    "Rigorously evaluating model performance using appropriate metrics and cross-validation, and preventing overfitting and underfitting."
+  ],
+  [
+    "DS",
+    "Advanced AI & DL",
+    "Neural Networks & Deep Learning",
+    "Understanding deep learning architectures such as MLPs, CNNs, and RNNs, model optimization techniques such as backpropagation and the Adam optimizer, and model training."
+  ],
+  [
+    "DS",
+    "Advanced AI & DL",
+    "NLP & Text Mining",
+    "Cleaning text through tokenization and lemmatization, analyzing sentiment, modeling topics with methods such as LDA, and performing advanced text processing."
+  ],
+  [
+    "DS",
+    "Advanced AI & DL",
+    "LLMs & Prompting",
+    "Integrating proprietary and open-source LLMs into applications, designing system prompts, applying few-shot prompting, and managing model outputs."
+  ],
+  [
+    "DS",
+    "Advanced AI & DL",
+    "Embedding Generation & Fine-tuning",
+    "Generating vector representations of text and documents and optimizing embedding models for semantic search in Indonesian."
+  ],
+  [
+    "DS",
+    "Advanced AI & DL",
+    "GenAI Evaluation & Safety",
+    "Evaluating LLM output quality for accuracy, relevance, toxicity, and hallucinations, and implementing guardrails."
+  ],
+  [
+    "DS",
+    "Analytics & Storytelling",
+    "Exploratory Data Analysis",
+    "Investigating data to discover patterns, detect anomalies, test hypotheses, and assess assumptions using summary statistics and graphical representations."
+  ],
+  [
+    "DS",
+    "Analytics & Storytelling",
+    "Data Visualization (Matplotlib/Seaborn)",
+    "Creating informative, visually effective, and accurate static and interactive charts to present relationships between variables."
+  ],
+  [
+    "DS",
+    "Analytics & Storytelling",
+    "Dashboard & BI Development",
+    "Developing interactive dashboards with real-time or scheduled updates to monitor key business metrics."
+  ],
+  [
+    "DS",
+    "Analytics & Storytelling",
+    "Executive KPI",
+    "Defining and mapping tactical KPIs to C-level strategic objectives and designing decision support interfaces."
+  ],
+  [
+    "DS",
+    "Analytics & Storytelling",
+    "Translating Technical Concepts",
+    "Translating complex mathematical and machine learning modeling results into simple, persuasive business narratives focused on practical action."
+  ],
+  [
+    "DS",
+    "ML Lifecycle & MLOps",
+    "Model Deployment & Serving",
+    "Configuring model serving to handle queries with low latency, high throughput, and autoscaling support."
+  ],
+  [
+    "DS",
+    "ML Lifecycle & MLOps",
+    "MLOps & Containerization",
+    "Packaging model code and dependencies into containers and orchestrating deployments in cloud and on-premises environments."
+  ],
+  [
+    "DS",
+    "ML Lifecycle & MLOps",
+    "Model Monitoring & Observability",
+    "Monitoring production model health, detecting data drift and concept drift, and triggering automatic retraining."
+  ],
+  [
+    "DS",
+    "ML Lifecycle & MLOps",
+    "Version Control",
+    "Managing versions of modeling code, team collaboration, code reviews, and automated integration through CI/CD."
+  ],
+  [
+    "DS",
+    "ML Lifecycle & MLOps",
+    "Quality Management",
+    "Implementing unit tests for data and models to detect silent data bugs before they affect business decisions."
+  ],
+  [
+    "DS",
+    "Governance & Strategy",
+    "AI Governance & Responsible AI",
+    "Complying with personal data regulations, ensuring model transparency through explainable AI, documenting model cards, and establishing accountability for AI systems."
+  ],
+  [
+    "DS",
+    "Governance & Strategy",
+    "Model Fairness & Bias Mitigation",
+    "Detecting bias in training data and models and applying mitigation techniques to ensure fair decisions across user groups."
+  ],
+  [
+    "DS",
+    "Governance & Strategy",
+    "Data-driven Business Strategy",
+    "Connecting data science findings to the company's strategic business direction and measuring the ROI of data initiatives."
+  ],
+  [
+    "AI",
+    "LLM & Prompting",
+    "LLM Fundamentals & Architecture",
+    "Transformer/attention understanding, model types, inference optimization, deployment patterns"
+  ],
+  [
+    "AI",
+    "LLM & Prompting",
+    "Prompt Engineering",
+    "System prompts, few-shot, chain-of-thought, output formatting, guardrails"
+  ],
+  [
+    "AI",
+    "LLM & Prompting",
+    "Prompt Optimization",
+    "A/B testing, eval metrics, cost/latency tuning, prompt versioning"
+  ],
+  [
+    "AI",
+    "LLM & Prompting",
+    "Multi-Model Management",
+    "Model selection strategy, routing, fallback logic, cost optimization across models"
+  ],
+  [
+    "AI",
+    "LLM & Prompting",
+    "Fine-Tuning & Transfer Learning",
+    "Dataset prep, LoRA/QLoRA, PEFT, evaluation and deployment of fine-tuned models"
+  ],
+  [
+    "AI",
+    "Retrieval & Knowledge",
+    "RAG",
+    "Chunking strategies, embedding generation, vector store integration, retrieval strategies, context window management"
+  ],
+  [
+    "AI",
+    "Retrieval & Knowledge",
+    "Vector Database Management",
+    "Selection (Milvus, Qdrant, Weaviate), indexing, performance tuning, scaling"
+  ],
+  [
+    "AI",
+    "Retrieval & Knowledge",
+    "Embedding Models & Techniques",
+    "Model selection, fine-tuning embeddings, multilingual (Bahasa Indonesia), dimensionality reduction"
+  ],
+  [
+    "AI",
+    "Retrieval & Knowledge",
+    "Knowledge Base Management",
+    "Content ingestion, indexing, update management, knowledge graph integration"
+  ],
+  [
+    "AI",
+    "Retrieval & Knowledge",
+    "Enterprise Search Architecture",
+    "Search infra, query processing, faceted search, relevance tuning, multi-source federation"
+  ],
+  [
+    "AI",
+    "Applications & NLP",
+    "Chat Application Development",
+    "Chat interfaces, conversation management, context handling, streaming responses"
+  ],
+  [
+    "AI",
+    "Applications & NLP",
+    "Text Summarization",
+    "Extractive/abstractive summarization, multi-document, controllable length"
+  ],
+  [
+    "AI",
+    "Applications & NLP",
+    "Semantic Search",
+    "Embedding-based similarity, hybrid search, re-ranking, relevance scoring"
+  ],
+  [
+    "AI",
+    "Applications & NLP",
+    "Text Analytics",
+    "Sentiment analysis, topic modeling, trend analysis, entity extraction"
+  ],
+  [
+    "AI",
+    "Applications & NLP",
+    "Document Classification",
+    "Taxonomy design, multi-label/hierarchical classification, active learning"
+  ],
+  [
+    "AI",
+    "Applications & NLP",
+    "Named Entity Recognition",
+    "Extracting person/org/location/date/custom entities"
+  ],
+  [
+    "AI",
+    "Applications & NLP",
+    "OCR & Parsing",
+    "Text extraction from images/PDFs, table extraction, handwriting, multi-language"
+  ],
+  [
+    "AI",
+    "Agents",
+    "AI Agent Development",
+    "Agent architecture, decision-making logic, memory/state management, single-agent workflows"
+  ],
+  [
+    "AI",
+    "Agents",
+    "Multi-Agent Orchestration",
+    "Agent communication protocols, task delegation, coordination, scalable multi-agent architectures"
+  ],
+  [
+    "AI",
+    "Agents",
+    "MCP Integration",
+    "MCP server setup, tool registration, resource management, connecting agents to enterprise systems"
+  ],
+  [
+    "AI",
+    "Data & Infrastructure",
+    "Pipeline Development (ETL/ELT)",
+    "Ingestion, transformation, loading, scheduling, monitoring, data quality"
+  ],
+  [
+    "AI",
+    "Data & Infrastructure",
+    "Database Design & Management",
+    "Schema design, indexing, query optimization, migrations, backup/recovery"
+  ],
+  [
+    "AI",
+    "Data & Infrastructure",
+    "Cloud Data Infrastructure",
+    "Storage, compute, networking, cost optimization on sovereign cloud infra"
+  ],
+  [
+    "AI",
+    "Data & Infrastructure",
+    "API Development & Integration",
+    "REST/GraphQL endpoint design, auth, rate limiting, versioning, third-party integration"
+  ],
+  [
+    "AI",
+    "Data & Infrastructure",
+    "Data Modeling",
+    "Conceptual/logical/physical modeling, data warehouse/lake architecture"
+  ],
+  [
+    "AI",
+    "ML Lifecycle",
+    "Model Training & Experimentation",
+    "Experiment design, hyperparameter tuning, training infra, distributed training"
+  ],
+  [
+    "AI",
+    "ML Lifecycle",
+    "Evaluation & Validation",
+    "Metrics selection, A/B testing, bias detection, benchmark design"
+  ],
+  [
+    "AI",
+    "ML Lifecycle",
+    "Serving & Deployment",
+    "Containerization, serving frameworks (TGI, vLLM, Triton), autoscaling, blue/green deploys"
+  ],
+  [
+    "AI",
+    "ML Lifecycle",
+    "MLOps & CI/CD",
+    "Model registry, versioning, automated testing, CI/CD, infra-as-code for ML"
+  ],
+  [
+    "AI",
+    "ML Lifecycle",
+    "Monitoring & Observability",
+    "Drift detection, performance tracking, alerting, cost monitoring, retraining triggers"
+  ],
+  [
+    "AI",
+    "Analytics & Reporting",
+    "Data Analytics & Exploration",
+    "EDA, statistical analysis, trend identification, data storytelling"
+  ],
+  [
+    "AI",
+    "Analytics & Reporting",
+    "Dashboard & Visualization",
+    "Visualization design, tool selection (Tableau, Superset, etc.), real-time updates"
+  ],
+  [
+    "AI",
+    "Analytics & Reporting",
+    "BI & Reporting",
+    "Business metrics definition, automated reporting, data quality/compliance reporting"
+  ],
+  [
+    "AI",
+    "Analytics & Reporting",
+    "Executive Dashboard Development",
+    "C-level KPI visualization, strategic metrics, decision support interfaces"
+  ],
+  [
+    "AI",
+    "Governance & Compliance",
+    "Audit Trail & Logging",
+    "User activity tracking, AI interaction logs, compliance audit trails, log analytics"
+  ],
+  [
+    "AI",
+    "Governance & Compliance",
+    "AI Governance & Ethics",
+    "Model documentation, bias monitoring, ethical guidelines, responsible AI, regulatory compliance"
+  ]
+]

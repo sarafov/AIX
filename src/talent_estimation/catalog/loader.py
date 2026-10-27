@@ -34,6 +34,7 @@ class RoleProfile(BaseModel):
     usually_supporting_on: str = ""
     substitutes: str = ""
     pillars: dict[str, list[str]] = Field(default_factory=dict)
+    skill_definitions: dict[str, str] = Field(default_factory=dict)
 
     def describe(self) -> str:
         """Return a compact text description used in prompts.
@@ -59,6 +60,11 @@ class RoleProfile(BaseModel):
         if self.substitutes:
             lines.append(f"  Substitusi: {self.substitutes}")
         lines.append(f"  Pilar skill: {pillars}")
+        if self.skill_definitions:
+            lines.append(
+                "  Definisi skill: "
+                + "; ".join(f"{s}: {d}" for s, d in self.skill_definitions.items())
+            )
         return "\n".join(lines)
 
 
@@ -179,7 +185,18 @@ def load_default_catalog() -> Catalog:
         .joinpath("default_catalog.yaml")
         .read_text(encoding="utf-8")
     )
-    return _from_mapping(yaml.safe_load(text))
+    catalog = _from_mapping(yaml.safe_load(text))
+    overlay_file = resources.files("talent_estimation.catalog").joinpath("capability_overlay.json")
+    if overlay_file.is_file():
+        grouped: dict[str, dict[str, list[str]]] = {}
+        for row in json.loads(overlay_file.read_text(encoding="utf-8")):
+            code, pillar, skill, definition = row
+            grouped.setdefault(code, {}).setdefault(pillar, []).append(skill)
+            catalog.roles[code].skill_definitions[skill] = definition
+        for code, pillars in grouped.items():
+            catalog.roles[code].pillars = pillars
+        catalog.version = "1.2-AIX"
+    return catalog
 
 
 def _split_skills(value: str) -> list[str]:
@@ -264,6 +281,37 @@ def _catalog_from_excel(content: bytes) -> Catalog:
     base = load_default_catalog().model_copy(deep=True)
     roles: dict[str, RoleProfile] = {}
 
+    # Accept the one-skill-per-row catalog prepared for the self-assessment.
+    flat_sheet = next(
+        (
+            s
+            for s in workbook
+            if [str(c or "").strip().lower() for c in next(s.iter_rows(values_only=True), ())][:4]
+            == ["role", "category", "skill", "definition"]
+        ),
+        None,
+    )
+    if flat_sheet is not None:
+        for row in flat_sheet.iter_rows(min_row=2, values_only=True):
+            if len(row) < 3 or not all(row[:3]):
+                continue
+            code, pillar, skill = (str(x).strip() for x in row[:3])
+            if code not in base.roles:
+                raise ValueError(f"Unknown catalog role: {code}.")
+            if code not in roles:
+                roles[code] = base.roles[code].model_copy(deep=True)
+                roles[code].pillars = {}
+                roles[code].skill_definitions = {}
+            if skill in roles[code].pillars.get(pillar, []):
+                raise ValueError(f"Duplicate catalog skill: {code}/{pillar}/{skill}.")
+            roles[code].pillars.setdefault(pillar, []).append(skill)
+            if len(row) > 3 and row[3]:
+                roles[code].skill_definitions[skill] = str(row[3]).strip()
+        if not roles:
+            raise ValueError("The catalog has no skill rows.")
+        base.roles.update(roles)
+        return base
+
     if "Scope_Capability" in workbook.sheetnames:
         rows = list(workbook["Scope_Capability"].iter_rows(values_only=True))
         header_index = next(
@@ -316,6 +364,11 @@ def _catalog_from_excel(content: bytes) -> Catalog:
     for code, role in roles.items():
         if not role.pillars and code in base.roles:
             role.pillars = base.roles[code].pillars
+
+    if "Skill_Definitions" in workbook.sheetnames:
+        for row in workbook["Skill_Definitions"].iter_rows(min_row=2, values_only=True):
+            if len(row) >= 4 and str(row[0]) in roles and row[2] and row[3]:
+                roles[str(row[0])].skill_definitions[str(row[2]).strip()] = str(row[3]).strip()
 
     if not roles:
         raise ValueError(
@@ -399,7 +452,19 @@ def catalog_to_excel(catalog: Catalog) -> bytes:
     pillars.column_dimensions["B"].width = 30
     pillars.column_dimensions["C"].width = 110
 
-    for sheet in (scope, pillars):
+    definitions = workbook.create_sheet("Skill_Definitions")
+    definitions.append(["Kode", "Pilar", "Skill", "Definition"])
+    for code, role in catalog.roles.items():
+        for pillar, skills in role.pillars.items():
+            for skill in skills:
+                definitions.append([code, pillar, skill, role.skill_definitions.get(skill, "")])
+    for letter, width in zip("ABCD", [8, 32, 50, 100], strict=True):
+        definitions.column_dimensions[letter].width = width
+    for row in definitions.iter_rows(min_row=2):
+        for cell in row:
+            cell.alignment = wrap
+
+    for sheet in (scope, pillars, definitions):
         for cell in sheet[1]:
             cell.font = header_font
             cell.fill = header_fill

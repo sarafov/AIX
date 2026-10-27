@@ -49,6 +49,14 @@ from talent_estimation.llm import (
 from talent_estimation.skills import AGENT_CARDS
 from talent_estimation.skills.judgement import parse_request
 from talent_estimation.skills.schemas import ReclassifyRequest
+from talent_estimation.staffing import (
+    StaffingRequest,
+    export_plan,
+    project_from_run,
+    read_project,
+    read_talents,
+    recommend,
+)
 
 MAX_UPLOAD_BYTES = 4 * 1024 * 1024
 """Total upload size per request. Vercel functions accept about 4.5 MB."""
@@ -471,6 +479,69 @@ def excel(body: RunEnvelope) -> Response:
         content,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f'attachment; filename="Validasi_Talent_{name}.xlsx"'},
+    )
+
+
+@app.post("/api/py/talent/parse")
+async def parse_talents(
+    file: Annotated[UploadFile, File()], catalog: Annotated[str, Form()] = ""
+) -> dict[str, Any]:
+    """Import a roster in memory without storing personal data on the server."""
+    content = await _read(file)
+    try:
+        active = Catalog.model_validate_json(catalog) if catalog else load_default_catalog()
+        return read_talents(content or b"", active)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Cannot read talent workbook: {exc}") from exc
+
+
+@app.post("/api/py/talent/project")
+async def parse_talent_project(file: Annotated[UploadFile, File()]) -> dict[str, Any]:
+    """Continue staffing from a previously exported validation workbook."""
+    content = await _read(file)
+    try:
+        return read_project(content or b"").model_dump(mode="json")
+    except Exception as exc:
+        raise HTTPException(
+            status_code=400, detail=f"Cannot read validation workbook: {exc}"
+        ) from exc
+
+
+class StaffingRunBody(RunEnvelope):
+    """Selected FTE method for continuing a live estimation run."""
+
+    method: str = "bottom_up_peak"
+
+
+@app.post("/api/py/talent/from-run")
+def talent_from_run(body: StaffingRunBody) -> dict[str, Any]:
+    """Turn reviewed WBS classifications and capabilities into staffing inputs."""
+    try:
+        return project_from_run(body.run, body.method).model_dump(mode="json")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/api/py/talent/recommend")
+def talent_recommendations(body: StaffingRequest) -> dict[str, Any]:
+    """Rank all talents without using job titles as a filter or prior."""
+    try:
+        return recommend(body)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/api/py/talent/export")
+def talent_export(body: StaffingRequest) -> Response:
+    """Export a freshly recalculated, human-selected assignment proposal."""
+    try:
+        content = export_plan(body)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return Response(
+        content,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": 'attachment; filename="Talent_Assignment_Plan.xlsx"'},
     )
 
 

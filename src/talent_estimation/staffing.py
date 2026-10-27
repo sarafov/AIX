@@ -10,6 +10,7 @@ from collections import defaultdict
 from typing import Any, Literal
 
 from openpyxl import Workbook, load_workbook
+from openpyxl.utils import get_column_letter
 from pydantic import BaseModel, Field, model_validator
 
 from talent_estimation.catalog import Catalog
@@ -34,6 +35,32 @@ def role_code(value: Any) -> str:
 def skill_key(role: str, pillar: str, skill: str) -> str:
     """Keep identical names in different role/pillar contexts distinct."""
     return "|".join([role_code(role), norm(pillar), norm(skill)])
+
+
+def parse_fte(value: Any, cell: str) -> float | None:
+    """Read numeric Excel cells and decimal-comma text without assuming blanks are zero."""
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        raise ValueError(f"{cell}: FTE must be a number, not a boolean.")
+    if isinstance(value, str):
+        text = re.sub(r"[\s\u00a0\u202f]+", "", value)
+        if text.lower() in {"", "-", "n/a", "na", "unknown"}:
+            return None
+        percent = text.endswith("%")
+        if percent:
+            text = text[:-1]
+        if not re.fullmatch(r"[+-]?(?:\d+(?:[.,]\d+)?|[.,]\d+)", text):
+            raise ValueError(f"{cell}: invalid FTE '{value}'. Use a number such as 0.5 or 0,5.")
+        number = float(text.replace(",", ".")) / (100 if percent else 1)
+    else:
+        try:
+            number = float(value)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"{cell}: invalid FTE '{value}'.") from exc
+    if not math.isfinite(number) or not 0 <= number <= 10:
+        raise ValueError(f"{cell}: FTE must be between 0 and 10.")
+    return number
 
 
 class Talent(BaseModel):
@@ -140,8 +167,7 @@ def read_talents(content: bytes, catalog: Catalog) -> dict[str, Any]:
     warnings: list[str] = []
     current_role = ""
     for index, (top, label) in enumerate(zip(rows[0], rows[1], strict=True)):
-        header = norm(top) or norm(label)
-        if header in {
+        metadata_labels = {
             "nama",
             "name",
             "role utama",
@@ -152,7 +178,18 @@ def read_talents(content: bytes, catalog: Catalog) -> dict[str, Any]:
             "fte",
             "fte saat ini",
             "capacity fte",
-        }:
+        }
+        header = next(
+            (
+                h
+                for h in [norm(f"{top or ''} {label or ''}"), norm(top), norm(label)]
+                if h in metadata_labels
+            ),
+            "",
+        )
+        if top and role_code(top) in catalog.roles:
+            current_role = role_code(top)
+        if header:
             metadata[header] = index
             continue
         if top:
@@ -180,7 +217,27 @@ def read_talents(content: bytes, catalog: Catalog) -> dict[str, Any]:
         raise ValueError("No skill columns match the active catalog.")
 
     def value(row: tuple[Any, ...], *labels: str) -> Any:
-        return next((row[metadata[label]] for label in labels if label in metadata), None)
+        return next(
+            (
+                row[metadata[label]]
+                for label in labels
+                if label in metadata and row[metadata[label]] not in (None, "")
+            ),
+            None,
+        )
+
+    fte_labels = [label for label in ["current fte", "fte saat ini", "fte"] if label in metadata]
+    fte_columns = [get_column_letter(metadata[label] + 1) for label in fte_labels]
+    formula_rows = None
+    formula_without_cache: list[str] = []
+    if fte_labels or "capacity fte" in metadata:
+        formulas = load_workbook(io.BytesIO(content), read_only=True, data_only=False)
+        formula_rows = list(formulas[name].values)
+        formulas.close()
+    if not fte_labels:
+        warnings.append(
+            "No FTE or Current FTE column was found in either header row of the uploaded workbook. Check the saved file and upload it again."
+        )
 
     talents: list[Talent] = []
     names: set[str] = set()
@@ -207,8 +264,32 @@ def read_talents(content: bytes, catalog: Catalog) -> dict[str, Any]:
             if not math.isfinite(numeric) or numeric != int(numeric) or not 1 <= numeric <= 5:
                 raise ValueError(f"Row {row_number}, column {i + 1}: proficiency must be 1–5.")
             scores[key] = int(numeric)
-        current = value(row, "current fte", "fte saat ini", "fte")
-        capacity = value(row, "capacity fte")
+        current_label = next(
+            (label for label in fte_labels if row[metadata[label]] not in (None, "")),
+            fte_labels[0] if fte_labels else None,
+        )
+        current_cell = (
+            f"{get_column_letter(metadata[current_label] + 1)}{row_number}"
+            if current_label
+            else f"row {row_number}"
+        )
+        if current_label and formula_rows is not None and value(row, *fte_labels) in (None, ""):
+            original = formula_rows[row_number - 1][metadata[current_label]]
+            if isinstance(original, str) and original.startswith("="):
+                formula_without_cache.append(current_cell)
+        current = parse_fte(value(row, *fte_labels), current_cell)
+        capacity = parse_fte(
+            value(row, "capacity fte"),
+            f"{get_column_letter(metadata['capacity fte'] + 1)}{row_number}"
+            if "capacity fte" in metadata
+            else f"row {row_number}",
+        )
+        if capacity is None and "capacity fte" in metadata and formula_rows is not None:
+            original = formula_rows[row_number - 1][metadata["capacity fte"]]
+            if isinstance(original, str) and original.startswith("="):
+                raise ValueError(
+                    f"Row {row_number}: Capacity FTE formula has no saved result. Recalculate and save the workbook in Excel."
+                )
         talents.append(
             Talent(
                 id=hashlib.sha256(norm(name_value).encode()).hexdigest()[:16],
@@ -219,14 +300,18 @@ def read_talents(content: bytes, catalog: Catalog) -> dict[str, Any]:
                 ),
                 preferred_roles=str(value(row, "preferred role") or ""),
                 project=str(value(row, "tribe project") or ""),
-                current_fte=float(current) if current not in (None, "") else None,
-                capacity_fte=float(capacity) if capacity not in (None, "") else 1,
+                current_fte=current,
+                capacity_fte=capacity if capacity is not None else 1,
                 skills=scores,
             )
         )
     if not talents:
         raise ValueError("No named talents found.")
     unknown = sum(t.current_fte is None for t in talents)
+    if formula_without_cache:
+        warnings.append(
+            f"{len(formula_without_cache)} FTE formulas have no saved calculated value ({', '.join(formula_without_cache[:8])}). Recalculate and save the workbook in Excel, then upload it again. The server cannot calculate Excel formulas."
+        )
     if unknown:
         warnings.append(
             f"{unknown} talents have no Current FTE. Enter workload before confirming assignments. Capacity defaults to 1.0 FTE and is editable."
@@ -235,6 +320,12 @@ def read_talents(content: bytes, catalog: Catalog) -> dict[str, Any]:
         "talents": [t.model_dump() for t in talents],
         "warnings": warnings,
         "matched_skills": len(skill_columns),
+        "fte_import": {
+            "columns": fte_columns,
+            "loaded": len(talents) - unknown,
+            "missing": unknown,
+            "formulas_without_cached_value": len(formula_without_cache),
+        },
     }
 
 

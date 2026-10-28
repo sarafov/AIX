@@ -11,11 +11,16 @@ from typing import Any, Literal
 
 from openpyxl import Workbook, load_workbook
 from openpyxl.utils import get_column_letter
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from talent_estimation.catalog import Catalog
 
-ROLE_NAMES = {"DE": "Data Engineer", "DA": "Data Analyst", "DS": "Data Scientist", "AI": "Engineer"}
+ROLE_NAMES = {
+    "DE": "Data Engineer",
+    "DA": "Data Analyst",
+    "DS": "Data Scientist",
+    "AI": "AI Engineer",
+}
 
 
 def norm(value: Any) -> str:
@@ -27,7 +32,7 @@ def role_code(value: Any) -> str:
     """Resolve the four data roles, including the survey's Engineer label."""
     text = norm(value)
     for code, name in ROLE_NAMES.items():
-        if text in {norm(code), norm(name), "ai engineer" if code == "AI" else norm(name)}:
+        if text in {norm(code), norm(name), "engineer" if code == "AI" else norm(name)}:
             return code
     return str(value or "").strip()
 
@@ -75,6 +80,14 @@ class Talent(BaseModel):
     capacity_fte: float = Field(default=1, gt=0, le=10, allow_inf_nan=False)
     skills: dict[str, int] = Field(default_factory=dict)
 
+    @field_validator("primary_role", "preferred_roles")
+    @classmethod
+    def canonical_role_labels(cls, value: str) -> str:
+        """Accept older rosters and sessions while displaying canonical role names."""
+        return ", ".join(
+            ROLE_NAMES.get(role_code(part.strip()), part.strip()) for part in value.split(",")
+        )
+
     @model_validator(mode="after")
     def valid_scores(self) -> Talent:
         """Reject invalid self-assessment values instead of improving them silently."""
@@ -98,10 +111,11 @@ class Requirement(BaseModel):
 
 
 class Demand(BaseModel):
-    """Project need from the selected estimation method."""
+    """Editable requested FTE with independent estimates retained for comparison."""
 
     role: str
     fte: float | None = Field(default=None, ge=0, le=1000, allow_inf_nan=False)
+    estimates: dict[str, float | None] = Field(default_factory=dict)
 
 
 class TalentProject(BaseModel):
@@ -357,7 +371,15 @@ def project_from_run(run: Any, method: str = "bottom_up_peak") -> TalentProject:
                     reason=cap.reason,
                 )
             )
-    demands = [Demand(role=e.role, fte=getattr(e, attr[method])) for e in run.estimates]
+    requested = {r.role: r.requested_fte for r in run.role_inputs}
+    demands = [
+        Demand(
+            role=e.role,
+            fte=requested.get(e.role) or 0,
+            estimates={key: getattr(e, field) for key, field in attr.items()},
+        )
+        for e in run.estimates
+    ]
     return TalentProject(
         name=run.project.name or "Project",
         source="Current estimator run",
@@ -441,20 +463,41 @@ def read_project(content: bytes) -> TalentProject:
             )
         )
     try:
-        summary = _table(workbook, "Ringkasan", {"kode", "bottom up fte puncak"})
+        summary = _table(workbook, "Ringkasan", {"kode"})
         for row in summary:
-            code = str(row.get("kode") or "")
-            if code not in {r.role for r in project.requirements}:
+            code = role_code(row.get("kode"))
+            if code not in {*ROLE_NAMES, "UXR", "UX", "UI"} and code not in {
+                r.role for r in project.requirements
+            }:
                 continue
-            value = row.get("bottom up fte puncak")
+
+            def amount(header: str, source_row: dict[str, Any] = row) -> float | None:
+                value = source_row.get(header)
+                if value is None or value == "":
+                    return None
+                try:
+                    number = float(str(value).replace(",", "."))
+                except ValueError:
+                    return None
+                return number if math.isfinite(number) and 0 <= number <= 1000 else None
+
             project.demands.append(
-                Demand(role=code, fte=float(value) if isinstance(value, (int, float)) else None)
+                Demand(
+                    role=code,
+                    fte=amount("diminta fte") or 0,
+                    estimates={
+                        "bottom_up_peak": amount("bottom up fte puncak"),
+                        "ucp_peak": amount("ucp fte puncak"),
+                        "bottom_up_average": amount("bottom up fte rata rata"),
+                        "ucp_average": amount("ucp fte rata rata"),
+                    },
+                )
             )
     except ValueError:
         project.warnings.append("FTE summary unavailable; enter demand per role manually.")
     for role in dict.fromkeys(r.role for r in project.requirements):
         if not any(d.role == role for d in project.demands):
-            project.demands.append(Demand(role=role))
+            project.demands.append(Demand(role=role, fte=0))
     if not project.requirements:
         raise ValueError("No classified capability requirements found in the workbook.")
     return project
@@ -572,8 +615,12 @@ def recommend(body: StaffingRequest) -> dict[str, Any]:
                 f"{t.name}: total workload {t.current_fte + allocated[t.id]:.2f} exceeds capacity {t.capacity_fte:.2f} FTE."
             )
     for role_result in result:
-        if role_result["remaining_fte"] is None or role_result["remaining_fte"] > 1e-9:
-            alerts.append(f"{role_result['role']}: demand is unknown or not fully assigned.")
+        if not role_result["required_fte"] or role_result["required_fte"] <= 0:
+            continue
+        if role_result["assigned_fte"] <= 1e-9:
+            alerts.append(
+                f"{ROLE_NAMES.get(role_result['role'], role_result['role'])}: belum ada talent dipilih untuk kebutuhan {role_result['required_fte']:.2f} FTE."
+            )
         if (
             role_result["required_fte"] is not None
             and role_result["assigned_fte"] > role_result["required_fte"] + 1e-9

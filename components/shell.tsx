@@ -98,6 +98,7 @@ function Sidebar() {
           <div className="space-y-1 border-t border-line pt-3">
             <NavLink href="/katalog" label="Katalog Capability" icon={<Layers className="h-4 w-4" aria-hidden />} />
             <NavLink href="/penugasan" label="Pemetaan & Penugasan" icon={<CircleCheck className="h-4 w-4" aria-hidden />} />
+            <NavLink href="/sla" label="Draf Resource SLA" icon={<BookOpen className="h-4 w-4" aria-hidden />} />
             <NavLink href="/pengaturan" label="Pengaturan" icon={<Settings className="h-4 w-4" aria-hidden />} />
             <NavLink href="/metodologi" label="Metodologi" icon={<BookOpen className="h-4 w-4" aria-hidden />} />
             <NavLink href="/tentang" label="Tentang Aplikasi" icon={<Info className="h-4 w-4" aria-hidden />} />
@@ -113,6 +114,7 @@ function MobileNav() {
   const links = [
     { href: "/", label: "Beranda" },
     { href: "/validasi", label: "Validasi" },
+    { href: "/sla", label: "Resource SLA" },
     ...(run ? [{ href: "/hasil/ringkasan", label: "Hasil" }] : []),
     { href: "/pengaturan", label: "Pengaturan" },
   ];

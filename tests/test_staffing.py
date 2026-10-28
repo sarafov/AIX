@@ -215,8 +215,56 @@ def test_validation_import_stops_at_next_summary_section():
     s.append(["Kode", "Other section"])
     s.append(["DA", 999])
     p = read_project(xlsx(w))
-    assert len(p.demands) == 1 and p.demands[0].fte == 0.8
+    assert len(p.demands) == 1 and p.demands[0].fte == 0
+    assert p.demands[0].estimates["bottom_up_peak"] == 0.8
     assert p.requirements[0].weight == 30
+
+
+@pytest.mark.parametrize("requested,expected", [(2, 2), ("0,5", 0.5), (0, 0), (None, 0)])
+def test_requested_fte_is_separate_from_estimate(requested, expected):
+    w = Workbook()
+    s = w.active
+    s.title = "Capability"
+    s.append(["WBS ID", "Role", "Pilar", "Skill"])
+    s.append(["1", "DA", "Querying & Transformation", "Advanced SQL Execution"])
+    s = w.create_sheet("Breakdown_WBS")
+    s.append(["WBS ID", "Role", "Klasifikasi UCP"])
+    s.append(["1", "DA", "Average"])
+    s = w.create_sheet("Ringkasan")
+    s.append(["Kode", "Role", "Diminta (FTE)", "Bottom-up FTE puncak", "UCP FTE rata-rata"])
+    s.append(["DA", "Data Analyst", requested, 1.23, 0.8])
+    s.append(["UX", "UX", 0, 0, 0])
+    p = read_project(xlsx(w))
+    assert p.demands[0].fte == expected
+    assert p.demands[0].estimates["bottom_up_peak"] == 1.23
+    assert p.demands[0].estimates["ucp_average"] == 0.8
+    assert p.demands[1].fte == 0
+
+
+def test_demand_alerts_only_for_positive_unselected_roles_and_capacity_still_warns():
+    b = body(fte=0.5)
+    b.project.demands.extend([Demand(role="UX", fte=0), Demand(role="UI")])
+    report = recommend(b)
+    assert len(report["alerts"]) == 1
+    assert "belum ada talent dipilih" in report["alerts"][0]
+    b.assignments = [Assignment(talent_id="a", role="DA", fte=0.2)]
+    report = recommend(b)
+    assert report["roles"][0]["remaining_fte"] == 0.8
+    assert report["alerts"] == []
+    b.assignments[0].fte = 1
+    assert any("exceeds capacity" in a for a in recommend(b)["alerts"])
+
+
+def test_legacy_engineer_labels_import_as_ai_engineer():
+    t = Talent(
+        id="a",
+        name="A",
+        primary_role="Engineer",
+        preferred_roles="Data Engineer, Engineer, AI Engineer",
+    )
+    assert t.primary_role == "AI Engineer"
+    assert t.preferred_roles == "Data Engineer, AI Engineer, AI Engineer"
+    assert skill_key("Engineer", "P", "S") == skill_key("AI Engineer", "P", "S")
 
 
 @pytest.mark.parametrize(

@@ -49,6 +49,7 @@ from talent_estimation.llm import (
 from talent_estimation.skills import AGENT_CARDS
 from talent_estimation.skills.judgement import parse_request
 from talent_estimation.skills.schemas import ReclassifyRequest
+from talent_estimation.sla_api import router as sla_router
 from talent_estimation.staffing import (
     StaffingRequest,
     export_plan,
@@ -549,3 +550,6 @@ def talent_export(body: StaffingRequest) -> Response:
 async def validation_error(_: Any, exc: ValidationError) -> JSONResponse:
     """Return model validation errors as 422 responses."""
     return JSONResponse(status_code=422, content={"detail": str(exc)})
+
+
+app.include_router(sla_router)

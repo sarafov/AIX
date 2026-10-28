@@ -12,8 +12,8 @@ export interface Requirement {
   classification: 'Simple' | 'Average' | 'Complex'; weight: number; target: number; reason: string;
 }
 export interface TalentProject {
-  name: string; source: string; method: string; requirements: Requirement[];
-  demands: { role: string; fte: number | null; estimates?: Record<string, number | null> }[]; warnings: string[];
+  name: string; source: string; method: string; estimate_note?: string; requirements: Requirement[];
+  demands: { role: string; fte: number | null; estimates?: Record<string, number | null>; existing_fte?: number | null; divergence?: number | null }[]; warnings: string[];
 }
 export interface Assignment { talent_id: string; role: string; fte: number; reason: string }
 export interface StaffingBody { project: TalentProject; talents: Talent[]; assignments: Assignment[] }
@@ -40,8 +40,8 @@ export async function importRoster(file: File, catalog: Catalog | null): Promise
 export async function importProject(file: File): Promise<TalentProject> {
   const body = new FormData(); body.append('file', file); return request('project', { method: 'POST', body });
 }
-export function fromRun(run: RunResult, method: string): Promise<TalentProject> {
-  return request('from-run', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ run, method }) });
+export function fromRun(run: RunResult): Promise<TalentProject> {
+  return request('from-run', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ run }) });
 }
 export function rank(body: StaffingBody): Promise<Ranking> {
   return request('recommend', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });

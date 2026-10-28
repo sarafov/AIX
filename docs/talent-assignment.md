@@ -22,6 +22,13 @@ to upload an existing validation workbook.
    identifies the FTE column and the number of successfully loaded values.
 4. Review project demand, WBS classification, skill weights, and target levels.
    You can add catalog skills or remove requirements. The default target is 3.
+   Requested demand defaults to `Ringkasan` → `Diminta (FTE)` (column C), or 0
+   when absent. The current estimator run uses its requested role inputs.
+   UCP/Bottom-up peak/average estimates remain separate comparison values.
+   The chosen method controls the estimate column without overwriting requests.
+   Edit requested FTE per role to set the final combination. The summary shows
+   requested, estimated, selected talent count, allocated, and remaining FTE.
+   `Engineer` in older rosters and sessions is displayed as `AI Engineer`.
 5. Compare all candidates and open their skill details. Select any talent,
    change their assigned FTE, or replace them with another candidate.
 6. Download the assignment workbook, including the full ranking, human choices,
@@ -66,8 +73,11 @@ a ranking for the remaining need, not a frozen pre-allocation score.
 Current workload must refer to the same period as the proposed project.
 Allocations are conservatively concurrent and additive across roles. The app
 does not infer monthly workload or assume that two assignments do not overlap.
-Over-capacity, incomplete, unknown-demand, and unknown-workload plans remain
-visible warnings. Choosing a talent does not constitute an approved assignment.
+Over-capacity and unknown-workload plans retain their warnings. A role's
+missing-selection alert appears only when requested FTE is positive and no
+talent is selected. Selecting a talent removes that alert; the summary still
+shows any remaining FTE. Roles with zero demand produce no role warnings.
+Choosing a talent does not constitute an approved assignment.
 
 The 70/20/10 weights are an initial planning policy, not a validated measure of
 job performance. Calibrate them against reviewed project outcomes. A human can

@@ -119,3 +119,27 @@ The supplied survey's duplicate storage label was confirmed as
 confirmed as `Data Lineage Tracking` during preparation of the talent workbook.
 The app consumes the corrected talent workbook and does not infer additional
 survey-label corrections.
+
+## Deliverable-Based Resource SLA
+
+Open **Draf Resource SLA** after reviewing the assignment plan. Use the current
+human-selected assignments or upload a Talent Assignment Plan workbook. Names,
+roles, and allocated FTE come from selected assignments, never the ranked
+recommendations. The active catalog supplies editable scope suggestions.
+
+The draft reuses supporting documents selected in Validasi Baru. Additional
+KAK, project charter, PDF, DOCX, TXT, or Markdown documents can be uploaded here.
+When no usable project context exists, drafting requires supporting documents
+or a manually entered context. Scanned documents without text require OCR.
+Uploads are limited to five files and 4 MB in total per request.
+
+Project context is extracted locally on the server without an LLM call.
+Missing facts and acceptance criteria remain reviewer placeholders. Parts 3-6
+use editable general terms from the supplied SLA reference; generating a draft
+does not approve or assign resources.
+
+Every section and table cell can be edited, and resource rows can be added or
+removed. Word and PDF exports use the current edited draft. Download the JSON
+session to preserve it across page refreshes; switching dashboard menus retains
+the current draft and assignment plan in memory. No uploaded source document
+or talent data is bundled into the public application.

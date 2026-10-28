@@ -51,14 +51,14 @@ function FteSummary({ project, assignments }: { project: TalentProject; assignme
 }
 
 export default function StaffingPage() {
-  const { run, catalog } = useStore();
-  const [talents, setTalents] = useState<Talent[]>([]);
-  const [project, setProject] = useState<TalentProject | null>(null);
-  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const { run, catalog, planningSession, setPlanningSession } = useStore();
+  const [talents, setTalents] = useState<Talent[]>(planningSession?.talents ?? []);
+  const [project, setProject] = useState<TalentProject | null>(planningSession?.project ?? null);
+  const [assignments, setAssignments] = useState<Assignment[]>(planningSession?.assignments ?? []);
   const [ranking, setRanking] = useState<Ranking | null>(null);
-  const [warnings, setWarnings] = useState<string[]>([]);
-  const [fteImport, setFteImport] = useState<FteImport | null>(null);
-  const [rosterSource, setRosterSource] = useState('');
+  const [warnings, setWarnings] = useState<string[]>(planningSession?.warnings ?? []);
+  const [fteImport, setFteImport] = useState<FteImport | null>(planningSession?.fteImport ?? null);
+  const [rosterSource, setRosterSource] = useState(planningSession?.rosterSource ?? '');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [step, setStep] = useState(0);
@@ -71,6 +71,9 @@ export default function StaffingPage() {
   const generation = useRef(0);
   const body = useMemo(() => project ? { project, talents, assignments } : null, [project, talents, assignments]);
   const bodyRef = useRef(body); bodyRef.current = body;
+  useEffect(() => {
+    if (body) setPlanningSession({ ...body, warnings, fteImport, rosterSource });
+  }, [body, warnings, fteImport, rosterSource, setPlanningSession]);
   const [rankedBody, setRankedBody] = useState<typeof body>(null);
   const fresh = rankedBody === body && !!ranking;
   const report = ranking?.roles.find(r => r.role === role) ?? ranking?.roles[0];
@@ -154,6 +157,7 @@ export default function StaffingPage() {
       <div className="flex justify-end"><Button onClick={() => { setStep(2); setQuery(''); }} disabled={!project.requirements.length}>Hitung rekomendasi <ArrowRight size={16} /></Button></div>
     </div>}
     {step === 2 && <div className="space-y-5">
+      <div className="flex justify-end">{assignments.length > 0 && <Link href="/sla" className="rounded-lg bg-accent-600 px-4 py-2 text-sm font-medium text-white">Lanjut ke draf Resource SLA <ArrowRight className="ml-1 inline" size={15} /></Link>}</div>
       {project && <FteSummary project={project} assignments={assignments} />}
       <Card title="Skor yang dapat ditelusuri" description="70 poin proficiency + 20 poin cakupan target + 10 poin kapasitas. Role Utama dan Preferred Role tidak memberikan poin dan tidak membatasi kandidat."><p className="text-sm text-muted">Proficiency = rata-rata berbobot (level − 1) / 4. Cakupan = proporsi bobot skill yang mencapai target. Kapasitas = available FTE / sisa kebutuhan per orang (maksimum 1). Nilai 1 berarti tidak ada pengalaman (0 poin skill). FTE tidak diketahui mendapat 0 poin kapasitas dan label provisional. Bobot adalah kebijakan awal yang perlu dikalibrasi melalui hasil penugasan.</p></Card>
       <div className="flex flex-wrap items-center justify-between gap-3"><select aria-label="Role rekomendasi" className={`${inputClass} max-w-sm`} value={role || report?.role || ''} onChange={e => { setRole(e.target.value); setInspect(null); }}>{project?.demands.map(d => <option key={d.role} value={d.role}>{roleNames[d.role] ?? d.role}</option>)}</select><Button disabled={!fresh || busy} onClick={() => perform(async () => { if (body) await exportPlan(body); })}><Download size={16} /> Unduh rencana Excel</Button></div>

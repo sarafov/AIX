@@ -24,10 +24,16 @@ to upload an existing validation workbook.
    You can add catalog skills or remove requirements. The default target is 3.
    Requested demand defaults to `Ringkasan` → `Diminta (FTE)` (column C), or 0
    when absent. The current estimator run uses its requested role inputs.
-   UCP/Bottom-up peak/average estimates remain separate comparison values.
-   The chosen method controls the estimate column without overwriting requests.
-   Edit requested FTE per role to set the final combination. The summary shows
-   requested, estimated, selected talent count, allocated, and remaining FTE.
+   Phase 1 displays requested FTE, project existing FTE, UCP average/peak,
+   Bottom-up average/peak, and their signed percentage difference together.
+   There is no FTE method selector. Difference uses the average values:
+   `(UCP average - Bottom-up average) / Bottom-up average`; a zero denominator
+   displays an em dash. Standard exported workbooks without cached formula
+   results are recalculated from Parameter, Breakdown_WBS, and UCP inputs
+   using the estimation engine. Saved numeric estimates are preserved.
+   Unsupported or incomplete inputs remain unavailable with an import warning.
+   Edit requested FTE per role in Phase 2 to set the final combination. The
+   assignment summary shows requested, selected count, allocated, and remaining FTE.
    `Engineer` in older rosters and sessions is displayed as `AI Engineer`.
 5. Compare all candidates and open their skill details. Select any talent,
    change their assigned FTE, or replace them with another candidate.

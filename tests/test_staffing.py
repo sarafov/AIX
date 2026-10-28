@@ -17,6 +17,7 @@ from talent_estimation.staffing import (
     Talent,
     TalentProject,
     export_plan,
+    project_from_run,
     read_project,
     read_talents,
     recommend,
@@ -265,6 +266,36 @@ def test_legacy_engineer_labels_import_as_ai_engineer():
     assert t.primary_role == "AI Engineer"
     assert t.preferred_roles == "Data Engineer, AI Engineer, AI Engineer"
     assert skill_key("Engineer", "P", "S") == skill_key("AI Engineer", "P", "S")
+
+
+async def test_validation_estimates_without_cached_formulas_match_current_run(demo_inputs, catalog):
+    from talent_estimation.agents import run_pipeline
+    from talent_estimation.domain.models import RunResult
+    from talent_estimation.excel import build_workbook
+
+    async for event in run_pipeline(demo_inputs, None):
+        if event["type"] == "result":
+            run = RunResult.model_validate(event["run"])
+    run.role_inputs[0].existing_fte = 0.25
+    content = build_workbook(run, catalog)
+    restored = read_project(content)
+    direct = project_from_run(run)
+    assert restored.estimate_note
+    assert not restored.warnings
+    assert len(restored.demands) == len(direct.demands)
+    for imported, current in zip(restored.demands, direct.demands, strict=True):
+        assert imported.role == current.role
+        assert imported.fte == current.fte
+        assert imported.existing_fte == current.existing_fte
+        assert imported.estimates == pytest.approx(current.estimates)
+        if current.divergence is None:
+            assert imported.divergence is None
+        else:
+            assert imported.divergence == pytest.approx(current.divergence)
+    # Saved numeric results remain authoritative when only other formulas lack caches.
+    w = load_workbook(io.BytesIO(content))
+    w["Ringkasan"]["G7"] = 123
+    assert read_project(xlsx(w)).demands[0].estimates["ucp_average"] == 123
 
 
 @pytest.mark.parametrize(

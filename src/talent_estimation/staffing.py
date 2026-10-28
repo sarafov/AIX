@@ -7,6 +7,7 @@ import io
 import math
 import re
 from collections import defaultdict
+from datetime import date, datetime
 from typing import Any, Literal
 
 from openpyxl import Workbook, load_workbook
@@ -116,6 +117,8 @@ class Demand(BaseModel):
     role: str
     fte: float | None = Field(default=None, ge=0, le=1000, allow_inf_nan=False)
     estimates: dict[str, float | None] = Field(default_factory=dict)
+    existing_fte: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    divergence: float | None = Field(default=None, allow_inf_nan=False)
 
 
 class TalentProject(BaseModel):
@@ -124,6 +127,7 @@ class TalentProject(BaseModel):
     name: str = "Project"
     source: str = ""
     method: str = "bottom_up_peak"
+    estimate_note: str = ""
     requirements: list[Requirement] = Field(default_factory=list, max_length=10000)
     demands: list[Demand] = Field(default_factory=list, max_length=100)
     warnings: list[str] = Field(default_factory=list)
@@ -372,11 +376,14 @@ def project_from_run(run: Any, method: str = "bottom_up_peak") -> TalentProject:
                 )
             )
     requested = {r.role: r.requested_fte for r in run.role_inputs}
+    existing = {r.role: r.existing_fte for r in run.role_inputs}
     demands = [
         Demand(
             role=e.role,
             fte=requested.get(e.role) or 0,
             estimates={key: getattr(e, field) for key, field in attr.items()},
+            existing_fte=existing.get(e.role, 0),
+            divergence=(e.ucp_fte - e.bu_fte) / e.bu_fte if e.bu_fte and e.ucp_fte else None,
         )
         for e in run.estimates
     ]
@@ -485,6 +492,7 @@ def read_project(content: bytes) -> TalentProject:
                 Demand(
                     role=code,
                     fte=amount("diminta fte") or 0,
+                    existing_fte=amount("talent existing fte"),
                     estimates={
                         "bottom_up_peak": amount("bottom up fte puncak"),
                         "ucp_peak": amount("ucp fte puncak"),
@@ -500,7 +508,152 @@ def read_project(content: bytes) -> TalentProject:
             project.demands.append(Demand(role=role, fte=0))
     if not project.requirements:
         raise ValueError("No classified capability requirements found in the workbook.")
+    if any(
+        any(
+            d.estimates.get(k) is None
+            for k in ("ucp_average", "ucp_peak", "bottom_up_average", "bottom_up_peak")
+        )
+        for d in project.demands
+    ):
+        try:
+            rebuilt = _recalculate_validation(
+                workbook, breakdown, [d.role for d in project.demands]
+            )
+            for demand in project.demands:
+                estimate = rebuilt.get(demand.role)
+                if estimate:
+                    for estimate_key, value in estimate.items():
+                        if demand.estimates.get(estimate_key) is None:
+                            demand.estimates[estimate_key] = value
+            project.estimate_note = (
+                "Rumus tanpa hasil tersimpan dihitung ulang dari input workbook."
+            )
+        except (ValueError, TypeError, KeyError, AttributeError) as exc:
+            project.warnings.append(
+                f"Estimasi FTE belum tersedia: {exc}. Hitung ulang dan simpan workbook di Excel, lalu unggah kembali."
+            )
+    for demand in project.demands:
+        ucp, bu = demand.estimates.get("ucp_average"), demand.estimates.get("bottom_up_average")
+        if ucp and bu:
+            demand.divergence = (ucp - bu) / bu
     return project
+
+
+def _recalculate_validation(
+    workbook: Any, breakdown: list[dict[str, Any]], roles: list[str]
+) -> dict[str, dict[str, float]]:
+    """Recompute the standard exported workbook using the existing estimation engine."""
+    from talent_estimation.calc.calendar import networkdays
+    from talent_estimation.calc.engine import recalculate
+    from talent_estimation.domain.models import (
+        EF_FACTORS,
+        TCF_FACTORS,
+        Actor,
+        BreakdownRow,
+        Parameters,
+        ProjectInfo,
+        RoleFactors,
+        RunResult,
+    )
+
+    if "Parameter" not in workbook.sheetnames:
+        raise ValueError("sheet Parameter tidak ditemukan")
+    sheet = workbook["Parameter"]
+    if sheet["A18"].value != "Hari kerja per bulan":
+        raise ValueError("format Parameter tidak dikenali")
+
+    def day(value: Any) -> date | None:
+        return (
+            value.date()
+            if isinstance(value, datetime)
+            else value
+            if isinstance(value, date)
+            else None
+        )
+
+    params = Parameters(
+        days_per_month=sheet["B18"].value,
+        hours_per_day=sheet["B19"].value,
+        phm=sheet["B20"].value,
+        support_factor=sheet["B21"].value,
+        tolerance=sheet["B22"].value,
+        duration_override_months=sheet["B13"].value,
+        holidays=[d for r in range(32, 62) if (d := day(sheet[f"A{r}"].value))],
+        actor_weights={sheet[f"A{r}"].value: sheet[f"B{r}"].value for r in range(26, 29)},
+        use_case_weights={sheet[f"A{r}"].value: sheet[f"C{r}"].value for r in range(26, 29)},
+    )
+    project = ProjectInfo(
+        name=str(sheet["B5"].value or "Project"),
+        start=day(sheet["B11"].value),
+        end=day(sheet["B12"].value),
+    )
+    if not project.start or not project.end:
+        raise ValueError("tanggal periode proyek belum lengkap")
+    rows = []
+    for row in breakdown:
+        if not row.get("wbs id") or not row.get("role"):
+            continue
+        start, end = day(row.get("start")), day(row.get("end"))
+        workdays = row.get("hari kerja item")
+        if workdays is None:
+            if not start or not end:
+                raise ValueError(f"tanggal WBS {row['wbs id']} belum lengkap")
+            workdays = networkdays(start, end, params.holidays)
+        rows.append(
+            BreakdownRow(
+                item_id=str(row["wbs id"]),
+                item_name=str(row.get("item wbs") or ""),
+                role=role_code(row["role"]),
+                start=start,
+                end=end,
+                workdays=workdays,
+                involvement=row["peran"],
+                quantity=row["qty"],
+                classification=row["klasifikasi ucp"],
+                allocation_fte=row["alokasi fte bottom up"],
+            )
+        )
+    factors = []
+    for role in roles:
+        if f"UCP_{role}" not in workbook.sheetnames:
+            raise ValueError(f"sheet UCP_{role} tidak ditemukan")
+        ucp_sheet = workbook[f"UCP_{role}"]
+        actors = [
+            Actor(
+                name=str(ucp_sheet[f"B{r}"].value or "Actor"),
+                category=ucp_sheet[f"C{r}"].value,
+                count=ucp_sheet[f"D{r}"].value,
+            )
+            for r in range(7, 19)
+            if ucp_sheet[f"C{r}"].value
+        ]
+        ratings = {}
+        for block, definitions in [(33, TCF_FACTORS), (51, EF_FACTORS)]:
+            for offset, (code, _, weight) in enumerate(definitions):
+                r = block + offset
+                if ucp_sheet[f"A{r}"].value != code or ucp_sheet[f"C{r}"].value != weight:
+                    raise ValueError(f"format faktor UCP_{role} tidak dikenali")
+                ratings[code] = ucp_sheet[f"D{r}"].value
+        factors.append(RoleFactors(role=role, actors=actors, ratings=ratings))
+    run = recalculate(
+        RunResult(
+            project=project,
+            parameters=params,
+            roles=roles,
+            breakdown=rows,
+            factors=factors,
+            ai_enabled=False,
+        )
+    )
+    return {
+        e.role: {
+            "ucp_average": e.ucp_fte,
+            "ucp_peak": e.ucp_peak_fte,
+            "bottom_up_average": e.bu_fte,
+            "bottom_up_peak": e.bu_peak_fte,
+        }
+        for e in run.estimates
+    }
 
 
 def recommend(body: StaffingRequest) -> dict[str, Any]:

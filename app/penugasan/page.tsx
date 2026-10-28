@@ -9,18 +9,44 @@ import { download, exportPlan, fromRun, importProject, importRoster, rank } from
 import type { Assignment, Candidate, FteImport, Ranking, Requirement, Talent, TalentProject } from '@/lib/staffing';
 
 const roleNames: Record<string, string> = { DE: 'Data Engineer', DA: 'Data Analyst', DS: 'Data Scientist', AI: 'AI Engineer' };
-const methodNames: Record<string, string> = { bottom_up_peak: 'Bottom-up · FTE puncak', ucp_peak: 'UCP · FTE puncak', bottom_up_average: 'Bottom-up · FTE rata-rata', ucp_average: 'UCP · FTE rata-rata' };
 const roleLabel = (text: string) => text.split(',').map(p => p.trim() === 'Engineer' ? 'AI Engineer' : p.trim()).join(', ');
 const steps = ['Data & FTE', 'Kebutuhan Skill', 'Rekomendasi & Penugasan'];
 const scale = ['Tidak ada pengalaman', 'Dasar', 'Menengah', 'Mahir', 'Ahli'];
 const fmt = (n: number | null | undefined) => n == null ? 'Belum diisi' : n.toFixed(2);
 
+function EstimateSummary({ project }: { project: TalentProject }) {
+  const difference = (d: TalentProject['demands'][number]) => {
+    const ucp = d.estimates?.ucp_average; const bu = d.estimates?.bottom_up_average;
+    const value = d.divergence ?? (ucp != null && bu != null && bu > 0 ? (ucp - bu) / bu : null);
+    return value == null ? '—' : `${value > 0 ? '+' : ''}${(value * 100).toFixed(0)}%`;
+  };
+  return <Card title="Ringkasan kebutuhan FTE proyek" description={`Sumber: ${project.source}. ${project.estimate_note ?? ''}`}>
+    <div className="overflow-x-auto"><table className="w-full min-w-[850px] text-sm" aria-label="Perbandingan kebutuhan FTE proyek">
+      <thead className="bg-canvas text-center"><tr>
+        <th rowSpan={2} scope="col" className="border border-line p-3">Role</th>
+        <th rowSpan={2} scope="col" className="border border-line p-3">Diminta<br />(FTE)</th>
+        <th rowSpan={2} scope="col" className="border border-line p-3">Talent existing<br />(FTE)</th>
+        <th colSpan={2} scope="colgroup" className="border border-line p-3">UCP FTE</th>
+        <th colSpan={2} scope="colgroup" className="border border-line p-3">Bottom Up FTE</th>
+        <th rowSpan={2} scope="col" className="border border-line p-3">Selisih UCP vs<br />Bottom Up</th>
+      </tr><tr>{['Rata-rata', 'Puncak', 'Rata-rata', 'Puncak'].map((label, i) => <th key={i} scope="col" className="border border-line px-3 py-2">{label}</th>)}</tr></thead>
+      <tbody>{project.demands.map(d => <tr key={d.role} className="border-b border-line">
+        <th scope="row" className="p-3 text-left font-medium">{roleNames[d.role] ?? d.role}</th>
+        <td className="p-3 text-right">{fmt(d.fte ?? 0)}</td><td className="p-3 text-right">{fmt(d.existing_fte)}</td>
+        {['ucp_average', 'ucp_peak', 'bottom_up_average', 'bottom_up_peak'].map(key => <td key={key} className="p-3 text-right">{fmt(d.estimates?.[key])}</td>)}
+        <td className="p-3 text-right">{difference(d)}</td>
+      </tr>)}</tbody>
+    </table></div>
+    <p className="mt-3 text-xs text-muted">Selisih = (UCP rata-rata − Bottom Up rata-rata) / Bottom Up rata-rata. Tanda — berarti persentase tidak tersedia atau pembagi 0. Talent existing adalah alokasi proyek dari Ringkasan, bukan Current FTE tiap talent.</p>
+  </Card>;
+}
+
 function FteSummary({ project, assignments }: { project: TalentProject; assignments: Assignment[] }) {
-  return <Card title="Kombinasi FTE proyek" description={`Sumber: ${project.source}. Pembanding estimasi: ${methodNames[project.method] ?? project.method}. Diminta (FTE) menjadi dasar penugasan.`}>
-    <div className="overflow-x-auto"><table className="w-full text-left text-sm" aria-label="Kombinasi FTE proyek"><thead><tr>{['Role', 'Diminta (FTE)', 'Estimasi (FTE)', 'Talent dipilih', 'Dialokasikan (FTE)', 'Sisa (FTE)'].map(h => <th className="p-3" key={h}>{h}</th>)}</tr></thead><tbody>{project.demands.map(d => {
+  return <Card title="Kombinasi FTE proyek" description={`Sumber: ${project.source}. Diminta (FTE) menjadi dasar penugasan.`}>
+    <div className="overflow-x-auto"><table className="w-full text-left text-sm" aria-label="Kombinasi FTE proyek"><thead><tr>{['Role', 'Diminta (FTE)', 'Talent dipilih', 'Dialokasikan (FTE)', 'Sisa (FTE)'].map(h => <th className="p-3" key={h}>{h}</th>)}</tr></thead><tbody>{project.demands.map(d => {
       const chosen = assignments.filter(a => a.role === d.role); const assigned = chosen.reduce((sum, a) => sum + a.fte, 0);
-      return <tr key={d.role} className="border-t border-line"><td className="p-3 font-medium">{roleNames[d.role] ?? d.role}</td><td className="p-3">{fmt(d.fte ?? 0)}</td><td className="p-3">{fmt(d.estimates?.[project.method])}</td><td className="p-3">{chosen.length}</td><td className="p-3">{fmt(assigned)}</td><td className="p-3">{fmt(Math.max(0, (d.fte ?? 0) - assigned))}</td></tr>;
-    })}</tbody><tfoot><tr className="border-t border-line font-semibold"><td className="p-3">Total pilihan</td><td className="p-3">{fmt(project.demands.reduce((s, d) => s + (d.fte ?? 0), 0))}</td><td className="p-3" colSpan={2}></td><td className="p-3">{fmt(assignments.reduce((s, a) => s + a.fte, 0))}</td><td className="p-3">{fmt(project.demands.reduce((s, d) => s + Math.max(0, (d.fte ?? 0) - assignments.filter(a => a.role === d.role).reduce((n, a) => n + a.fte, 0)), 0))}</td></tr></tfoot></table></div>
+      return <tr key={d.role} className="border-t border-line"><td className="p-3 font-medium">{roleNames[d.role] ?? d.role}</td><td className="p-3">{fmt(d.fte ?? 0)}</td><td className="p-3">{chosen.length}</td><td className="p-3">{fmt(assigned)}</td><td className="p-3">{fmt(Math.max(0, (d.fte ?? 0) - assigned))}</td></tr>;
+    })}</tbody><tfoot><tr className="border-t border-line font-semibold"><td className="p-3">Total pilihan</td><td className="p-3">{fmt(project.demands.reduce((s, d) => s + (d.fte ?? 0), 0))}</td><td className="p-3"></td><td className="p-3">{fmt(assignments.reduce((s, a) => s + a.fte, 0))}</td><td className="p-3">{fmt(project.demands.reduce((s, d) => s + Math.max(0, (d.fte ?? 0) - assignments.filter(a => a.role === d.role).reduce((n, a) => n + a.fte, 0)), 0))}</td></tr></tfoot></table></div>
   </Card>;
 }
 
@@ -38,7 +64,6 @@ export default function StaffingPage() {
   const [step, setStep] = useState(0);
   const [role, setRole] = useState('');
   const [query, setQuery] = useState('');
-  const [method, setMethod] = useState('bottom_up_peak');
   const [inspect, setInspect] = useState<string | null>(null);
   const [addSkill, setAddSkill] = useState('');
   const [newItem, setNewItem] = useState('');
@@ -90,11 +115,10 @@ export default function StaffingPage() {
       <div className="grid gap-5 xl:grid-cols-2">
         <Card title="1. Hasil estimasi proyek" description="Gunakan hasil saat ini, atau unggah Validasi_Talent_proyek.xlsx.">
           <div className="space-y-3">
-            <select aria-label="Metode kebutuhan FTE" className={inputClass} value={method} onChange={e => { setMethod(e.target.value); if (project) setProject({ ...project, method: e.target.value }); }}><option value="bottom_up_peak">Bottom-up • FTE puncak</option><option value="ucp_peak">UCP • FTE puncak</option><option value="bottom_up_average">Bottom-up • FTE rata-rata</option><option value="ucp_average">UCP • FTE rata-rata</option></select>
-            <Button disabled={!run || busy} onClick={() => perform(async () => { if (run) changeProject(await fromRun(run, method)); })}>Gunakan hasil estimasi saat ini <ArrowRight size={15} /></Button>
+            <Button disabled={!run || busy} onClick={() => perform(async () => { if (run) changeProject(await fromRun(run)); })}>Gunakan hasil estimasi saat ini <ArrowRight size={15} /></Button>
             {!run && <p className="text-xs text-muted">Belum ada hasil aktif. <Link className="text-accent-700 underline" href="/validasi">Mulai estimasi baru</Link> atau unggah workbook di bawah.</p>}
-            <label className="block text-sm font-medium">Unggah workbook validasi<input className={`${inputClass} mt-2`} aria-label="Workbook validasi proyek" type="file" accept=".xlsx" disabled={busy} onChange={fileHandler(async f => { const p = await importProject(f); p.source = f.name; p.method = method; changeProject(p); })} /></label>
-            <p className="text-xs text-muted">Diminta (FTE) dibaca dari Ringkasan kolom C, default 0 jika kosong. Pilih metode di atas untuk melihat estimasi pembanding. Kebutuhan dan kombinasi FTE dapat diubah di langkah 2.</p>
+            <label className="block text-sm font-medium">Unggah workbook validasi<input className={`${inputClass} mt-2`} aria-label="Workbook validasi proyek" type="file" accept=".xlsx" disabled={busy} onChange={fileHandler(async f => { const p = await importProject(f); p.source = f.name; changeProject(p); })} /></label>
+            <p className="text-xs text-muted">Diminta (FTE) dibaca dari Ringkasan kolom C, default 0 jika kosong. UCP dan Bottom Up ditampilkan bersama, masing-masing rata-rata dan puncak. Kebutuhan dan kombinasi FTE dapat diubah di langkah 2.</p>
             {project && <StatusBadge tone="good">{project.requirements.length} kebutuhan skill • {project.demands.length} role</StatusBadge>}
           </div>
         </Card>
@@ -104,11 +128,11 @@ export default function StaffingPage() {
           {talents.length > 0 && <p className="mt-4 flex items-center gap-2 text-sm text-emerald-800"><Check size={16} /> {talents.length} talent berhasil dimuat</p>}
           {rosterSource && <p className="mt-2 text-xs text-muted">File aktif: {rosterSource}</p>}
           {fteImport && <p role="status" className={`mt-2 text-sm ${fteImport.missing ? 'text-amber-900' : 'text-emerald-800'}`}>Kolom FTE: {fteImport.columns.join(', ') || 'tidak ditemukan'} · {fteImport.loaded}/{talents.length} nilai FTE terbaca{fteImport.formulas_without_cached_value ? ` · ${fteImport.formulas_without_cached_value} rumus belum dihitung` : ''}</p>}
-          <label className="mt-5 block text-xs text-muted">Pulihkan sesi tersimpan<input className={`${inputClass} mt-2`} aria-label="Pulihkan sesi" type="file" accept=".json" disabled={busy} onChange={fileHandler(async f => { const data = JSON.parse(await f.text()); if (data.version !== 1 || !Array.isArray(data.talents) || !data.project) throw new Error('Format sesi tidak sesuai.'); await rank(data); setProject(data.project); setMethod(data.project.method); setTalents(data.talents); setAssignments(data.assignments ?? []); setWarnings(data.warnings ?? []); setFteImport(data.fteImport ?? null); setRosterSource(data.rosterSource ?? 'Sesi tersimpan'); setRanking(null); })} /></label>
+          <label className="mt-5 block text-xs text-muted">Pulihkan sesi tersimpan<input className={`${inputClass} mt-2`} aria-label="Pulihkan sesi" type="file" accept=".json" disabled={busy} onChange={fileHandler(async f => { const data = JSON.parse(await f.text()); if (data.version !== 1 || !Array.isArray(data.talents) || !data.project) throw new Error('Format sesi tidak sesuai.'); await rank(data); setProject(data.project); setTalents(data.talents); setAssignments(data.assignments ?? []); setWarnings(data.warnings ?? []); setFteImport(data.fteImport ?? null); setRosterSource(data.rosterSource ?? 'Sesi tersimpan'); setRanking(null); })} /></label>
         </Card>
       </div>
       {[...warnings, ...(project?.warnings ?? [])].length > 0 && <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950"><ul className="list-disc space-y-1 pl-5">{[...warnings, ...(project?.warnings ?? [])].map((w, i) => <li key={i}>{w}</li>)}</ul></div>}
-      {project && <FteSummary project={project} assignments={assignments} />}
+      {project && <EstimateSummary project={project} />}
       <Card title="Kapasitas & beban kerja" description="Current FTE harus mencakup periode proyek yang sama. Semua alokasi dalam rencana ini dihitung bersamaan; total kapasitas default 1 FTE dapat diubah.">
         <div className="mb-4 flex flex-wrap gap-3"><input className={`${inputClass} max-w-sm`} placeholder="Cari nama atau role" aria-label="Cari talent" value={query} onChange={e => setQuery(e.target.value)} /><span className="self-center text-sm text-muted">{talents.filter(t => t.current_fte == null).length} Current FTE belum diisi</span></div>
         <div className="max-h-[28rem] overflow-auto"><table className="w-full text-left text-sm"><thead className="sticky top-0 bg-canvas"><tr>{['Nama', 'Role Utama', 'Preferred Role', 'Tribe / Project', 'Current FTE', 'Capacity FTE'].map(h => <th key={h} className="p-3">{h}</th>)}</tr></thead><tbody>{talents.filter(searched).map(t => <tr key={t.id} className="border-t border-line"><td className="p-3 font-medium">{t.name}</td><td className="p-3">{roleLabel(t.primary_role)}</td><td className="p-3">{roleLabel(t.preferred_roles)}</td><td className="p-3">{t.project}</td>{(['current_fte', 'capacity_fte'] as const).map(field => <td key={field} className="p-3"><input className={`${inputClass} w-28`} aria-label={`${field} ${t.name}`} type="number" min={field === 'capacity_fte' ? 0.01 : 0} max={10} step="0.05" value={t[field] ?? ''} placeholder="Unknown" onChange={e => { const v = e.target.value === '' ? null : Number(e.target.value); setTalents(talents.map(x => x.id === t.id ? { ...x, [field]: field === 'capacity_fte' ? Math.max(0.01, v ?? 1) : v } : x)); }} /></td>)}</tr>)}</tbody></table></div>
@@ -116,7 +140,7 @@ export default function StaffingPage() {
       <div className="flex items-center justify-between"><p className="text-xs text-muted">Data sesi berada di memori browser. Simpan sesi sebelum menutup atau berpindah halaman. File talent tidak disertakan dalam repositori publik.</p><Button disabled={!project || !talents.length} onClick={() => { setStep(1); setQuery(''); }}>Tinjau kebutuhan skill <ArrowRight size={16} /></Button></div>
     </div>}
     {step === 1 && project && <div className="space-y-5">
-      <Card title="Kebutuhan proyek per role" description="Jumlah FTE diminta: isi 0 jika role tidak diperlukan. Nilai awal dari Ringkasan kolom C (Diminta FTE), atau 0 jika tidak tersedia. Estimasi adalah pembanding; pilihan Anda menentukan kebutuhan penugasan."><div className="grid gap-4 md:grid-cols-4">{project.demands.map((d, i) => <label key={d.role} className="text-sm font-medium">{roleNames[d.role] ?? d.role}<span className="mt-1 block text-xs font-normal text-muted">Diminta (FTE)</span><input aria-label={`Required FTE ${d.role}`} type="number" min={0} max={1000} step="0.05" className={`${inputClass} mt-2`} value={d.fte ?? 0} placeholder="0 jika tidak ada" onChange={e => setProject({ ...project, demands: project.demands.map((x, j) => j === i ? { ...x, fte: e.target.value === '' ? 0 : Number(e.target.value) } : x) })} /><span className="mt-1 block text-xs font-normal text-muted">Estimasi: {fmt(d.estimates?.[project.method])} FTE</span></label>)}</div></Card>
+      <Card title="Kebutuhan proyek per role" description="Jumlah FTE diminta: isi 0 jika role tidak diperlukan. Nilai awal dari Ringkasan kolom C (Diminta FTE), atau 0 jika tidak tersedia. Estimasi adalah pembanding; pilihan Anda menentukan kebutuhan penugasan."><div className="grid gap-4 md:grid-cols-4">{project.demands.map((d, i) => <label key={d.role} className="text-sm font-medium">{roleNames[d.role] ?? d.role}<span className="mt-1 block text-xs font-normal text-muted">Diminta (FTE)</span><input aria-label={`Required FTE ${d.role}`} type="number" min={0} max={1000} step="0.05" className={`${inputClass} mt-2`} value={d.fte ?? 0} placeholder="0 jika tidak ada" onChange={e => setProject({ ...project, demands: project.demands.map((x, j) => j === i ? { ...x, fte: e.target.value === '' ? 0 : Number(e.target.value) } : x) })} /></label>)}</div></Card>
       <FteSummary project={project} assignments={assignments} />
       <Card title="Capability & klasifikasi UCP" description="Bobot awal mengikuti bobot efektif UCP dari WBS: Simple 5, Average 10, Complex 15, dikali Qty dan faktor peran. Skill yang muncul di beberapa WBS mengakumulasi bobot. Target awal 3 (menengah).">
         <div className="mb-4 grid gap-3 md:grid-cols-[1fr_2fr_3fr_auto]">

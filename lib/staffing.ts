@@ -13,7 +13,7 @@ export interface Requirement {
 }
 export interface TalentProject {
   name: string; source: string; method: string; requirements: Requirement[];
-  demands: { role: string; fte: number | null }[]; warnings: string[];
+  demands: { role: string; fte: number | null; estimates?: Record<string, number | null> }[]; warnings: string[];
 }
 export interface Assignment { talent_id: string; role: string; fte: number; reason: string }
 export interface StaffingBody { project: TalentProject; talents: Talent[]; assignments: Assignment[] }

@@ -435,7 +435,7 @@ def export_sla_pdf(d: SlaDraft) -> bytes:
             name="BodySla",
             fontName="Helvetica",
             fontSize=10,
-            leading=14,
+            leading=13,
             spaceAfter=7,
             alignment=TA_LEFT,
         )

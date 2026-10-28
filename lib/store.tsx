@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import * as api from "./api";
+import type { PlanningSession, SlaDraft } from "./sla";
 import type {
   Catalog,
   Parameters,
@@ -59,6 +60,10 @@ export const MAX_FILES_PER_FIELD = 5;
 export const MAX_TOTAL_BYTES = 4 * 1024 * 1024;
 
 interface Store {
+  planningSession: PlanningSession | null;
+  setPlanningSession: (value: PlanningSession) => void;
+  slaDraft: SlaDraft | null;
+  setSlaDraft: (value: SlaDraft) => void;
   provider: ProviderConfig;
   setProvider: (p: ProviderConfig) => void;
   apiKey: string;
@@ -143,6 +148,8 @@ function toNumber(value: string): number | null {
 }
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
+  const [planningSession, setPlanningSession] = useState<PlanningSession | null>(null);
+  const [slaDraft, setSlaDraft] = useState<SlaDraft | null>(null);
   const [provider, setProvider] = useState<ProviderConfig>(DEFAULT_PROVIDER);
   const [apiKey, setApiKey] = useState("");
   const [defaultCatalog, setDefaultCatalog] = useState<Catalog | null>(null);
@@ -328,6 +335,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<Store>(
     () => ({
+      planningSession, setPlanningSession, slaDraft, setSlaDraft,
       provider, setProvider, apiKey, setApiKey, catalog, defaultCatalog, catalogSource, setCatalog,
       resetCatalog, project, setProject, parameters, setParameters, team, setTeam, teamAuto, setTeamAuto, aiEnabled,
       setAiEnabled, aiTools, setAiTools, files, setFiles, preview, setPreview, status, events,
@@ -335,6 +343,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       notice, setNotice, teamView, setTeamView,
     }),
     [
+      planningSession, slaDraft,
       provider, apiKey, catalog, defaultCatalog, catalogSource, setCatalog, resetCatalog, project,
       parameters, team, teamAuto, aiEnabled, aiTools, files, preview, status, events, error, startedAt, endedAt,
       modelCalls, demo,

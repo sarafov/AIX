@@ -17,7 +17,8 @@ Create a new app with these settings:
 
 The startup script provisions Python 3.12 with the official uv distribution
 when necessary, installs locked dependencies, and builds Next.js for production.
-It uses the persistent `/data` volume to reuse downloaded dependencies and the
+It uses the persistent data directory beside the cloned repository (the current
+image uses `/home/pwduser/data`) to reuse downloaded dependencies and the
 production build on subsequent starts. The first start can take several minutes.
 The image must include Node.js 20 or newer, npm, Git, tar, and curl or wget.
 

@@ -66,6 +66,23 @@ cleanup() {
 trap cleanup EXIT INT TERM
 "$PYTHON" -m uvicorn api.index:app --host 127.0.0.1 --port 8000 &
 API_PID=$!
+echo '[AIX] Waiting for the Python API before opening the dashboard'
+"$PYTHON" - <<'PY'
+import time
+import urllib.error
+import urllib.request
+
+for attempt in range(120):
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:8000/api/py/health", timeout=1) as response:
+            if response.status == 200:
+                break
+    except (OSError, urllib.error.URLError):
+        pass
+    time.sleep(0.5)
+else:
+    raise SystemExit("Python API did not become healthy within 60 seconds")
+PY
 node node_modules/next/dist/bin/next start --hostname 0.0.0.0 --port "${PORT:-3000}" &
 WEB_PID=$!
 while kill -0 "$API_PID" 2>/dev/null && kill -0 "$WEB_PID" 2>/dev/null; do

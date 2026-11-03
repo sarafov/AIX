@@ -1,13 +1,14 @@
 #!/bin/sh
-# Playdev clones the public repository into /data/AIX before invoking this file.
+# Playdev clones into its persistent data directory before invoking this file.
 set -eu
 cd "$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 export NEXT_TELEMETRY_DISABLED=1
 export AIX_PYTHON_API_ORIGIN=http://127.0.0.1:8000
 export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=2048}"
-export UV_CACHE_DIR=/data/aix-runtime/uv-cache
-export UV_PYTHON_INSTALL_DIR=/data/aix-runtime/python
-RUNTIME=/data/aix-runtime
+DATA_DIR="${AIX_DATA_DIR:-$(dirname "$PWD")}"
+RUNTIME="$DATA_DIR/aix-runtime"
+export UV_CACHE_DIR="$RUNTIME/uv-cache"
+export UV_PYTHON_INSTALL_DIR="$RUNTIME/python"
 mkdir -p "$RUNTIME/bin"
 echo "[AIX] Checking Node.js runtime"
 node --version
